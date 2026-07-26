@@ -1,0 +1,32 @@
+
+.how-section{padding:56px 0;background:linear-gradient(180deg,rgba(11,45,92,0.02),rgba(255,122,0,0.01));}
+.how-inner{max-width:1180px;margin:0 auto;padding:0 20px}
+.how-head{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.how-head h2{font-size:28px;color:#0B2D5C;margin:0;font-weight:700}
+.how-sub{color:#24344a;opacity:0.86}
+.how-flow{display:grid;grid-template-columns: repeat(4, 1fr);gap:24px;align-items:stretch;margin-top:18px}
+.how-card{background:white;border-radius:20px;padding:22px;position:relative;border:1px solid rgba(11,45,92,0.04);display:flex;flex-direction:column;align-items:center;gap:12px;min-height:320px;height:100%;box-shadow:0 12px 28px rgba(11,45,92,0.04);transition:transform .2s ease,box-shadow .2s ease}
+.how-card:hover{transform:translateY(-6px);box-shadow:0 32px 60px rgba(11,45,92,0.08);outline:0}
+.how-card:hover{box-shadow:0 32px 60px rgba(11,45,92,0.08), 0 0 0 6px rgba(255,122,0,0.06)}
+.how-badge{background:#FF7A00;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;margin-top:-28px;margin-bottom:4px;box-shadow:0 8px 22px rgba(11,45,92,0.06)}
+.how-icon{width:64px;height:64px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(255,122,0,0.06),rgba(11,45,92,0.03));border-radius:12px;color:#0B2D5C}
+.how-icon svg{width:36px;height:36px}
+.how-content{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:4px}
+.how-content h3{margin:0;color:#0B2D5C;font-size:18px}
+.how-content p{margin:0;color:#24344a;opacity:0.9}
+.how-trust{display:none}
+.how-cta{margin-top:22px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.cta-actions{display:flex;gap:10px}
+.btn{padding:10px 14px;border-radius:10px;text-decoration:none;display:inline-block}
+.btn-primary{background:#FF7A00;color:white}
+.btn-secondary{background:transparent;border:2px solid rgba(11,45,92,0.08);color:#0B2D5C}
+
+@media(max-width:1100px){
+  .how-flow{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:720px){
+  .how-flow{grid-template-columns:1fr;}
+  .how-card{min-height:260px}
+  .how-inner{padding:0 14px}
+}
+

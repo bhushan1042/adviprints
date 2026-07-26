@@ -1,0 +1,32 @@
+.product-showcase { margin: 18px 0; }
+.showcase-card { display:flex; gap:20px; align-items:center; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 28px rgba(8,15,30,0.08); transition: transform .18s ease, box-shadow .18s ease; }
+.showcase-card:focus { outline: none; box-shadow: 0 8px 28px rgba(8,15,30,0.12); }
+.showcase-card:hover { transform: translateY(-6px); box-shadow: 0 12px 36px rgba(8,15,30,0.12); }
+
+.showcase-image { flex: 0 0 40%; display:flex; align-items:center; justify-content:center; padding: 18px; background: #fff; }
+.showcase-image img { width: 100%; max-width: 100%; max-height: 620px; object-fit: contain; border-radius: 10px; transition: transform .35s ease; }
+.showcase-card:hover .showcase-image img { transform: scale(1.03); }
+
+.showcase-content { flex: 1 1 60%; padding: 22px 28px; display:flex; flex-direction:column; justify-content:center; }
+.showcase-title { margin: 0 0 10px 0; font-size: 32px; color: #042A3B; font-weight:800; }
+.showcase-subtitle { margin: 0 0 18px 0; color: #334d5c; line-height:1.45; font-size:1.05rem; }
+
+.showcase-features { list-style:none; padding:0; margin: 8px 0 20px 0; display:block; }
+.feature-item { margin: 10px 0; font-weight:600; color:#25414f; }
+.feature-item::before { content: '✓'; color: var(--brand-orange, #ff7a00); display:inline-block; width:28px; margin-right:8px; font-weight:800; }
+
+.showcase-actions { margin-top: 8px; }
+.btn-cta { background: linear-gradient(90deg, var(--brand-orange, #ff7a00), #ff5722); color: #fff; border: none; padding: 14px 22px; border-radius: 12px; font-weight:800; cursor:pointer; box-shadow: 0 10px 30px rgba(255,122,0,0.14); font-size:1rem; }
+.btn-cta:hover { filter: brightness(.98); transform: translateY(-2px); }
+
+/* Alternate layout when reverse */
+.product-showcase.reverse .showcase-card { flex-direction: row-reverse; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .showcase-card { flex-direction: column; max-height: none; gap:12px; }
+  .showcase-image { padding: 12px; }
+  .showcase-image img { max-height: 420px; width: 80%; }
+  .showcase-content { padding: 16px; }
+  .showcase-title { font-size: 22px; }
+}

@@ -1,0 +1,521 @@
+.checkoutPage {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  padding: 40px 20px;
+}
+
+.checkoutContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.progressBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.progressStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  position: relative;
+  opacity: 0.5;
+}
+
+.progressStep.active {
+  opacity: 1;
+}
+
+.progressStep.completed {
+  opacity: 0.8;
+}
+
+.progressStep span {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #6b7280;
+  font-size: 18px;
+  transition: all 0.3s;
+}
+
+.progressStep.active span {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  border-color: #7c3aed;
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+}
+
+.progressStep.completed span {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.progressStep label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: center;
+  max-width: 100px;
+}
+
+.progressStep.active label {
+  color: #7c3aed;
+  font-weight: 700;
+}
+
+.progressLine {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  margin: 0 20px;
+  margin-bottom: 38px;
+}
+
+.checkoutLayout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 32px;
+}
+
+.formSection {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.addressForm h2,
+.paymentForm h2,
+.reviewForm h2 {
+  margin: 0 0 24px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.formGroup label {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.formGroup input,
+.formGroup textarea {
+  padding: 12px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #1f2937;
+  transition: all 0.2s;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+  background: #ede9fe;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.formRow.three {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.paymentOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.paymentOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #ffffff;
+}
+
+.paymentOption:hover {
+  border-color: #7c3aed;
+  background: #ede9fe;
+}
+
+.paymentOption.selected {
+  border-color: #7c3aed;
+  background: linear-gradient(135deg, #ede9fe 0%, #fce7f3 100%);
+}
+
+.paymentOption input {
+  margin: 0;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+}
+
+.optionLabel {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.cardForm {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.cardPreview {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  padding: 24px;
+  border-radius: 10px;
+  color: white;
+  margin-bottom: 24px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.3);
+}
+
+.cardChip {
+  width: 50px;
+  height: 40px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  color: #78350f;
+}
+
+.cardNumber {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.upiForm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 32px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #f0fdf4 100%);
+  border-radius: 10px;
+}
+
+.upiIcon {
+  font-size: 48px;
+}
+
+.codInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fcdab7 100%);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.codIcon {
+  font-size: 48px;
+}
+
+.codInfo p {
+  margin: 0;
+  font-size: 15px;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.reviewForm h2 {
+  margin-bottom: 24px;
+}
+
+.reviewSection {
+  padding: 20px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-radius: 10px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.reviewSection h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reviewText {
+  margin: 0 0 12px;
+  color: #6b7280;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.editBtn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 8px 16px;
+  background: transparent;
+  color: #7c3aed;
+  border: 1.5px solid #7c3aed;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.editBtn:hover {
+  background: #7c3aed;
+  color: white;
+}
+
+.reviewItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  font-size: 13px;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.reviewItem:last-child {
+  border-bottom: none;
+}
+
+.orderSummarySection {
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.orderSummary {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.orderSummary h3 {
+  margin: 0 0 20px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.summaryItems {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  padding-right: 8px;
+}
+
+.summaryItem {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: 13px;
+  color: #6b7280;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.summaryItem:last-child {
+  border-bottom: none;
+}
+
+.divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 12px 0;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 0;
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 16px;
+}
+
+.placeOrderBtn {
+  width: 100%;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.placeOrderBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(124, 58, 237, 0.3);
+}
+
+.placeOrderBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.backBtn {
+  width: 100%;
+  padding: 12px 16px;
+  background: #f9fafb;
+  color: #6b7280;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.backBtn:hover {
+  background: #ffffff;
+  color: #7c3aed;
+  border-color: #7c3aed;
+}
+
+@media (max-width: 1024px) {
+  .checkoutLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .orderSummarySection {
+    position: static;
+  }
+
+  .progressBar {
+    padding: 20px;
+  }
+
+  .progressStep span {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+
+  .progressStep label {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .checkoutPage {
+    padding: 20px 16px;
+  }
+
+  .checkoutContainer {
+    max-width: 100%;
+  }
+
+  .progressBar {
+    flex-wrap: wrap;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .progressStep {
+    flex: 0 1 auto;
+  }
+
+  .progressLine {
+    flex: 1 1 100%;
+    height: 2px;
+    margin: 8px 0 0 0;
+  }
+
+  .formSection {
+    padding: 20px;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .formRow.three {
+    grid-template-columns: 1fr;
+  }
+
+  .reviewSection {
+    padding: 16px;
+  }
+
+  .editBtn {
+    position: static;
+    margin-top: 12px;
+    width: 100%;
+  }
+}

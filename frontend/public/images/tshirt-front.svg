@@ -1,0 +1,32 @@
+<svg viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg">
+  <!-- T-shirt body -->
+  <defs>
+    <linearGradient id="shirtGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f5f5f5;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main shirt body -->
+  <path d="M 100 80 L 150 50 L 200 45 L 250 40 L 300 45 L 350 50 L 400 80 L 420 150 L 420 600 Q 420 630 400 630 L 100 630 Q 80 630 80 600 L 80 150 Z" 
+        fill="url(#shirtGradient)" stroke="#ddd" stroke-width="1"/>
+  
+  <!-- Neck opening -->
+  <ellipse cx="250" cy="60" rx="35" ry="25" fill="white" stroke="#ddd" stroke-width="1"/>
+  
+  <!-- Left sleeve -->
+  <path d="M 100 80 Q 50 100 30 180 L 80 150 Z" fill="url(#shirtGradient)" stroke="#ddd" stroke-width="1"/>
+  
+  <!-- Right sleeve -->
+  <path d="M 400 80 Q 450 100 470 180 L 420 150 Z" fill="url(#shirtGradient)" stroke="#ddd" stroke-width="1"/>
+  
+  <!-- Sleeve cuffs -->
+  <circle cx="25" cy="185" r="12" fill="white" stroke="#ddd" stroke-width="1"/>
+  <circle cx="475" cy="185" r="12" fill="white" stroke="#ddd" stroke-width="1"/>
+  
+  <!-- Print area indicator (light blue) -->
+  <rect x="150" y="200" width="200" height="250" fill="none" stroke="#7c3aed" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+  
+  <!-- Subtle shading for depth -->
+  <ellipse cx="250" cy="400" rx="160" ry="20" fill="rgba(0,0,0,0.02)"/>
+</svg>

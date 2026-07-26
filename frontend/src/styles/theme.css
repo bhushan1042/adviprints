@@ -1,0 +1,42 @@
+:root {
+  /* Color palette */
+  --primary: #8B6B4A;
+  --primary-hover: #75583B;
+  --background: #FAF8F5;
+  --surface: #FFFFFF;
+  --surface-contrast: #F7F5F2;
+  --text-primary: #2C2C2C;
+  --text-secondary: #666666;
+  --muted: #A8A39A;
+  --border: #E8E1D8;
+  --danger: #E85B4B;
+
+  /* Elevation / shadows */
+  --shadow-1: 0 6px 18px rgba(16,24,40,0.06);
+  --shadow-2: 0 10px 30px rgba(139,107,74,0.15);
+
+  /* Radii & spacing */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* Typography */
+  --font-sans: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  /* Layout */
+  --nav-height: 88px;
+  /* Logo sizes */
+  --logo-height-desktop: 84px;
+  --logo-height-sticky: 66px;
+  --logo-height-tablet: 56px;
+  --logo-height-mobile: 44px;
+}
+
+/* Small global resets that use tokens */
+html, body, #root {
+  height: 100%;
+}
+body {
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
