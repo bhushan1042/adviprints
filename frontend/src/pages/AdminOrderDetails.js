@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from './AdminOrderDetails.module.css';
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
 const resolveImageUrl = (imageUrl) => {
   if (!imageUrl) return null;
@@ -28,7 +28,7 @@ const AdminOrderDetails = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+      const response = await fetch(`${API_BASE}/api/orders/${orderId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -53,7 +53,7 @@ const AdminOrderDetails = () => {
     try {
       setIsSaving(true);
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+      const response = await fetch(`${API_BASE}/api/orders/${orderId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

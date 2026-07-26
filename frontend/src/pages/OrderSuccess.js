@@ -14,7 +14,7 @@ const OrderSuccess = () => {
     const fetchOrder = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/api/orders/${id}`);
+        const response = await fetch(`${API_BASE}/api/orders/${id}`);
         
         if (!response.ok) {
           throw new Error('Order not found');

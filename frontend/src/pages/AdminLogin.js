@@ -8,14 +8,14 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
   const handleLogin = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/login-submit', {
+      const response = await fetch(`${API_BASE}/login-submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -1,562 +1,84 @@
 const express = require('express');
 const ejs = require('ejs');
-const mongoose = require('mongoose');
-const User = require('./database/database');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const Product = require("./database/Product");
-const Category = require("./database/Category");
-const Homepage = require('./database/Homepage');
-const Order = require('./database/Order');
-const Review = require('./database/Review');
-const Promotion = require('./database/Promotion');
-const Subscriber = require('./database/Subscriber');
-const BrandingSettings = require('./database/BrandingSettings');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-const multer = require('multer');
+const mongoose = require('mongoose');
+
+// ==========================================
+// CONFIG & MIDDLEWARE
+// ==========================================
+const { connectDatabase } = require('./config/database');
+const upload = require('./config/multer');
+const errorHandler = require('./middleware/errorHandler');
+const notFoundHandler = require('./middleware/notFound');
+
+// ==========================================
+// ROUTES
+// ==========================================
+const authRoutes = require('./routes/authRoutes');
+const productRoutes = require('./routes/productRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+const homepageRoutes = require('./routes/homepageRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
+const promotionRoutes = require('./routes/promotionRoutes');
+const subscriberRoutes = require('./routes/subscriberRoutes');
+const brandingRoutes = require('./routes/brandingRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
+
+// ==========================================
+// MIDDLEWARE SETUP
+// ==========================================
 app.use(cors());
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.json({ limit: '50mb' }));
 
-const JWT_SECRET = process.env.JWT_SECRET || 'change_this_secret';
-
-// ==========================================
-// MONGODB CONNECTION
-// ==========================================
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bhidu';
-
-console.log('🔌 Connecting to MongoDB:', MONGODB_URI);
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => {
-  console.log('✅ MongoDB Connected Successfully to database: bhidu');
-})
-.catch(err => {
-  console.error('❌ MongoDB Connection Error:', err.message);
-  console.log('⚠️ Continuing without database - orders may not be saved!');
-});
-
-// ensure uploads directory exists
+// Serve static uploads
 const uploadsDir = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
 
-// multer setup
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) { cb(null, uploadsDir); },
-  filename: function (req, file, cb) {
-    const safe = file.originalname.replace(/[^a-zA-Z0-9.\-\_]/g, '-');
-    cb(null, Date.now() + '-' + safe);
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+// ==========================================
+// ROUTE REGISTRATION
+// ==========================================
+app.post('/register', (req, res) => res.render('index'));
+app.get('/login', (req, res) => res.render('index'));
+app.get('/register', (req, res) => res.render('register'));
 
-// Authentication middleware to protect admin routes
-const authenticate = (req, res, next) => {
-  const authHeader = req.headers.authorization || req.headers.Authorization;
-  if (!authHeader) return res.status(401).json({ error: 'Authorization header missing' });
-  const parts = authHeader.split(' ');
-  if (parts.length !== 2 || parts[0] !== 'Bearer') return res.status(401).json({ error: 'Invalid authorization format' });
-  const token = parts[1];
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(401).json({ error: 'Invalid token' });
-    req.user = decoded;
-    next();
+// Auth routes
+app.use('/', authRoutes);
+
+// API routes
+app.use('/products', productRoutes);
+app.use('/categories', categoryRoutes);
+app.use('/homepage', homepageRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/reviews', reviewRoutes);
+app.use('/promotions', promotionRoutes);
+app.use('/newsletter', subscriberRoutes);
+app.use('/api/branding', brandingRoutes);
+app.use('/admin', adminRoutes);
+
+// Upload endpoint
+app.post('/upload', (req, res, next) => {
+  const { authenticate } = require('./middleware/authenticate');
+  authenticate(req, res, () => {
+    upload.single('image')(req, res, (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Upload failed' });
+      }
+      if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+      const url = '/uploads/' + req.file.filename;
+      res.json({ url, filename: req.file.filename, mimetype: req.file.mimetype, size: req.file.size });
+    });
   });
-};
-
-const createSlug = (value) => {
-  if (!value) return undefined;
-  return value.toString().trim().toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9\-]/g, '')
-    .replace(/\-+/g, '-')
-    .replace(/^-+|-+$/g, '');
-};
-
-const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-const findCategoryByIdentifier = async (identifier) => {
-  if (!identifier) return null;
-  let category = null;
-  if (mongoose.Types.ObjectId.isValid(identifier)) {
-    category = await Category.findById(identifier);
-    if (category) return category;
-  }
-  const normalized = createSlug(identifier);
-  if (normalized) {
-    category = await Category.findOne({ slug: normalized });
-    if (category) return category;
-  }
-  category = await Category.findOne({ name: new RegExp(`^${escapeRegExp(identifier)}$`, 'i') });
-  if (category) return category;
-  if (identifier.includes('-')) {
-    const prettyName = identifier.replace(/-/g, ' ');
-    category = await Category.findOne({ name: new RegExp(`^${escapeRegExp(prettyName)}$`, 'i') });
-  }
-  return category;
-};
-
-app.get('/login', (req,res)=> {
-    res.render('index');
-});
-app.get('/register', (req,res)=> {
-    res.render('register');
-});
-app.post('/register-submit', async (req,res)=> {
-    try {
-        const {name, email, password, confirmPassword} = req.body;
-        if (!name || !email || !password) return res.status(400).send('Missing fields');
-        if (password !== confirmPassword) {
-            return res.status(400).send('password does not match');
-        }
-        const userMatch = await User.findOne({email});
-        if (userMatch) {
-            return res.status(400).send('User already match');
-        }
-        const hashedpass = await bcrypt.hash(password,10);
-        const newuser = {
-            name: name,
-            email:email,
-            password: hashedpass,
-        }
-        const created = await User.create(newuser);
-        // return a token on successful registration
-        const token = jwt.sign({ userID: created._id, email: created.email }, JWT_SECRET, { expiresIn: '1h' });
-        return res.status(201).json({ message: 'User created successfully', token });
-    } catch(err) {
-        console.log(err);
-        return res.status(500).send('Server error');
-    }
-});
-app.post('/login-submit', async (req,res)=> {
-    try {
-        const {email, password} = req.body;
-        if (!email || !password) return res.status(400).send('Missing fields');
-        const userMatch = await User.findOne({email});
-        if (!userMatch) {
-            return res.status(400).send('User not available');
-        }
-        const passwordMatch = await bcrypt.compare(password, userMatch.password);
-        if (!passwordMatch) {
-            return res.status(400).send('In valid credientials');
-        }
-        const token = jwt.sign(
-            {userID: userMatch._id, email: userMatch.email},
-            JWT_SECRET,
-            { expiresIn: '1h' }
-
-        );
-        return res.status(200).json({
-            message: 'Login successful',
-            token
-        });
-    } catch(err) {
-        console.log(err);
-        return res.status(500).send('Server error');
-    }
-    
 });
 
-// Public: list categories
-app.get('/categories', async (req, res) => {
-    try {
-        const categories = await Category.find().sort({ createdAt: -1 });
-        res.json(categories);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Server Error" });
-    }
-});
-
-// Protected: create category
-app.post('/categories', authenticate, async (req, res) => {
-    try {
-    const { name, slug, description, imageUrl, bannerImageUrl, showcaseTitle, showcaseSubtitle, showcaseFeatures, showcaseCtaText } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name is required' });
-    const exists = await Category.findOne({ name });
-    if (exists) return res.status(400).json({ error: 'Category already exists' });
-    const createObj = { name, description, imageUrl: imageUrl || null, bannerImageUrl: bannerImageUrl || null };
-    const normalizedSlug = createSlug(slug || name);
-    if (normalizedSlug) createObj.slug = normalizedSlug;
-    if (showcaseTitle) createObj.showcaseTitle = showcaseTitle;
-    if (showcaseSubtitle) createObj.showcaseSubtitle = showcaseSubtitle;
-    if (Array.isArray(showcaseFeatures)) createObj.showcaseFeatures = showcaseFeatures;
-    else if (typeof showcaseFeatures === 'string' && showcaseFeatures.trim()) createObj.showcaseFeatures = showcaseFeatures.split('\n').map(s=>s.trim()).filter(Boolean);
-    if (showcaseCtaText) createObj.showcaseCtaText = showcaseCtaText;
-    const category = await Category.create(createObj);
-        res.status(201).json(category);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server Error' });
-    }
-});
-
-// Protected: update category
-app.put('/categories/:id', authenticate, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updates = req.body;
-        // allow updating imageUrl/bannerImageUrl
-        const allowed = ['name','slug','description','imageUrl','bannerImageUrl','showcaseTitle','showcaseSubtitle','showcaseFeatures','showcaseCtaText'];
-        const patch = {};
-        for (const k of allowed) if (updates[k] !== undefined) patch[k] = updates[k];
-        if (typeof patch.name === 'string' && !patch.slug) {
-          patch.slug = createSlug(patch.name);
-        }
-        if (patch.slug) patch.slug = createSlug(patch.slug);
-        // normalize showcaseFeatures if provided as string
-        if (patch.showcaseFeatures && typeof patch.showcaseFeatures === 'string') {
-          patch.showcaseFeatures = patch.showcaseFeatures.split('\n').map(s=>s.trim()).filter(Boolean);
-        }
-        const updated = await Category.findByIdAndUpdate(id, patch, { new: true, runValidators: true });
-        if (!updated) return res.status(404).json({ error: 'Category not found' });
-        res.json(updated);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server Error' });
-    }
-});
-
-// Protected: delete category
-app.delete('/categories/:id', authenticate, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const removed = await Category.findByIdAndDelete(id);
-        if (!removed) return res.status(404).json({ error: 'Category not found' });
-        // Optionally you might want to remove or reassign products in this category
-        await Product.updateMany({ category: removed.name }, { $set: { category: null } });
-        res.json({ message: 'Category deleted' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server Error' });
-    }
-});
-
-// Public: list products
-// Public: list products with aggregated rating and review count
-app.get('/products', async (req, res) => {
-  try {
-    // Aggregate products with review statistics
-    const products = await Product.aggregate([
-      { $sort: { createdAt: -1 } },
-      {
-        $lookup: {
-          from: 'reviews',
-          localField: '_id',
-          foreignField: 'productId',
-          as: 'reviews'
-        }
-      },
-      {
-        $addFields: {
-          reviewCount: { $size: '$reviews' },
-          averageRating: { $avg: '$reviews.rating' }
-        }
-      },
-      {
-        $project: {
-          reviews: 0
-        }
-      }
-    ]).exec();
-
-    res.json(products);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-
-// Featured products (top rated / recent) - limit 8
-app.get('/products/featured', async (req, res) => {
-  try {
-    const products = await Product.aggregate([
-      {
-        $lookup: {
-          from: 'reviews',
-          localField: '_id',
-          foreignField: 'productId',
-          as: 'reviews'
-        }
-      },
-      {
-        $addFields: {
-          reviewCount: { $size: '$reviews' },
-          averageRating: { $avg: '$reviews.rating' }
-        }
-      },
-      { $sort: { averageRating: -1, reviewCount: -1, createdAt: -1 } },
-      { $limit: 8 },
-      { $project: { reviews: 0 } }
-    ]).exec();
-    res.json(products);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-
-// Best sellers (approximate by review count) - horizontal carousel source
-app.get('/products/best-sellers', async (req, res) => {
-  try {
-    const sellers = await Review.aggregate([
-      { $group: { _id: '$productId', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 20 },
-      {
-        $lookup: {
-          from: 'products',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'product'
-        }
-      },
-      { $unwind: '$product' },
-      {
-        $project: {
-          _id: '$product._id',
-          name: '$product.name',
-          price: '$product.price',
-          imageUrl: '$product.imageUrl',
-          reviewCount: '$count'
-        }
-      }
-    ]).exec();
-    res.json(sellers);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-
-// New arrivals
-app.get('/products/new-arrivals', async (req, res) => {
-  try {
-    const arrivals = await Product.find().sort({ createdAt: -1 }).limit(12).exec();
-    res.json(arrivals);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-
-// Public: list products for a specific category by category id or slug
-app.get('/categories/:id/products', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const category = await findCategoryByIdentifier(id);
-    if (!category) return res.status(404).json({ error: 'Category not found' });
-
-    const cid = category._id.toString();
-    const products = await Product.find({
-      $or: [
-        { category: category.name },
-        { category: cid },
-        { categoryId: cid },
-      ],
-    }).sort({ createdAt: -1 });
-
-    res.json(products);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-
-// Protected: create product
-app.post('/products', authenticate, async (req, res) => {
-    try {
-        const { name, category, price, stock, imageUrl, imageFilename, imageMime, imageSize, description } = req.body;
-        if (!name || price == null) return res.status(400).json({ error: 'Name and price are required' });
-        // If category provided, ensure it exists (or allow null)
-        let catName = null;
-        if (category) {
-            const cat = await Category.findById(category).catch(() => null) || await Category.findOne({ name: category }).catch(() => null);
-            if (!cat) return res.status(400).json({ error: 'Category not found' });
-            catName = cat.name;
-        }
-        
-        // Generate unique product code
-        const count = await Product.countDocuments();
-        const productCode = `TS-${String(count + 1001).padStart(5, '0')}`;
-        
-        const createObj = { name, category: catName || category || null, price, stock: stock || 0, description, productCode };
-        if (imageUrl) {
-            createObj.imageUrl = imageUrl;
-            createObj.imageFilename = imageFilename || null;
-            createObj.imageMime = imageMime || null;
-            createObj.imageSize = imageSize ? Number(imageSize) : null;
-        }
-        const product = await Product.create(createObj);
-        return res.status(201).json(product);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server Error' });
-    }
-});
-
-// Protected: update product
-app.put('/products/:id', authenticate, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const updates = req.body;
-        // If category id provided in updates, translate it to name
-        if (updates.category) {
-            const cat = await Category.findById(updates.category).catch(() => null) || await Category.findOne({ name: updates.category }).catch(() => null);
-            if (!cat) return res.status(400).json({ error: 'Category not found' });
-            updates.category = cat.name;
-        }
-        // map incoming image fields
-        if (updates.imageUrl) {
-            updates.imageUrl = updates.imageUrl;
-            updates.imageFilename = updates.imageFilename || updates.imageFilename;
-            updates.imageMime = updates.imageMime || updates.imageMime;
-            updates.imageSize = updates.imageSize ? Number(updates.imageSize) : updates.imageSize;
-        }
-        const updated = await Product.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
-        if (!updated) return res.status(404).json({ error: 'Product not found' });
-        res.json(updated);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server Error' });
-    }
-});
-
-// Protected: delete product
-app.delete('/products/:id', authenticate, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const removed = await Product.findByIdAndDelete(id);
-        if (!removed) return res.status(404).json({ error: 'Product not found' });
-        res.json({ message: 'Product deleted' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server Error' });
-    }
-});
-
-// get single category by id or slug
-app.get('/categories/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const category = await findCategoryByIdentifier(id);
-        if (!category) return res.status(404).json({ error: 'Category not found' });
-        res.json(category);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server Error' });
-    }
-});
-
-// get single product
-app.get('/products/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const product = await Product.findById(id);
-        if (!product) return res.status(404).json({ error: 'Product not found' });
-        res.json(product);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server Error' });
-    }
-});
-
-// Admin stats endpoint (protected)
-app.get('/admin/stats', authenticate, async (req, res) => {
-  try {
-    const categoriesCount = await Category.countDocuments();
-    const productsCount = await Product.countDocuments();
-    const usersCount = await User.countDocuments();
-    res.json({ categories: categoriesCount, products: productsCount, users: usersCount });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-
-// Users management (protected)
-app.get('/users', authenticate, async (req, res) => {
-  try {
-    const users = await User.find().select('-password').sort({ createdAt: -1 });
-    res.json(users);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-app.get('/users/:id', authenticate, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-app.put('/users/:id', authenticate, async (req, res) => {
-  try {
-    const updates = { name: req.body.name, email: req.body.email };
-    if (req.body.password) {
-      updates.password = await bcrypt.hash(req.body.password, 10);
-    }
-    const updated = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('-password');
-    if (!updated) return res.status(404).json({ error: 'User not found' });
-    res.json(updated);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-app.delete('/users/:id', authenticate, async (req, res) => {
-  try {
-    const removed = await User.findByIdAndDelete(req.params.id);
-    if (!removed) return res.status(404).json({ error: 'User not found' });
-    res.json({ message: 'User deleted' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-app.post('/users', authenticate, async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password are required' });
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ error: 'User already exists' });
-    const hashed = await bcrypt.hash(password, 10);
-    const created = await User.create({ name, email, password: hashed });
-    const out = created.toObject(); delete out.password;
-    res.status(201).json(out);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server Error' });
-  }
-});
-
-// Protected upload endpoint for admin to upload images
-app.post('/upload', authenticate, upload.single('image'), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    const url = '/uploads/' + req.file.filename;
-    res.json({ url, filename: req.file.filename, mimetype: req.file.mimetype, size: req.file.size });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Upload failed' });
-  }
-});
-
-// ==========================================
-// PUBLIC HEALTH CHECK ENDPOINT
-// ==========================================
+// Health check
 app.get('/api/health', (req, res) => {
   const mongoConnected = mongoose?.connection?.readyState === 1;
   res.json({
@@ -566,38 +88,32 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ==========================================
-// SAVE CUSTOM ORDER WITH DESIGN
-// ==========================================
-app.post('/api/orders', async (req, res) => {
-  try {
-    console.log('\n' + '='.repeat(60));
-    console.log('📦 NEW ORDER RECEIVED');
-    console.log('='.repeat(60));
-    console.log('Time:', new Date().toISOString());
-    console.log('Request Body Keys:', Object.keys(req.body));
-    
-    const {
-      customerName,
-      customerEmail,
-      customerPhone,
-      address,
-      productId,
-      productName,
-      productPrice,
-      productCode,
-      designTemplate,
-      originalImage,
-      previewImage,
-      uploadedImage,
-      position,
-      quantity,
-      totalPrice,
-      paymentMethod
-    } = req.body;
+// Admin SPA routes
+app.get('/admin', (req, res) => res.render('admin'));
+app.get('/admin/*', (req, res) => res.render('admin'));
 
-    console.log('📋 Validating order data...');
-    
+// ==========================================
+// ERROR HANDLING
+// ==========================================
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+// ==========================================
+// DATABASE & SERVER STARTUP
+// ==========================================
+const PORT = process.env.PORT || 5000;
+
+(async () => {
+  try {
+    await connectDatabase();
+    app.listen(PORT, () => {
+      console.log('✅ Server connected on port ' + PORT);
+    });
+  } catch (err) {
+    console.error('❌ Failed to start server:', err.message);
+    process.exit(1);
+  }
+})();
     // Enhanced validation with detailed logging
     const errors = [];
     if (!customerName) errors.push('❌ customerName is missing');

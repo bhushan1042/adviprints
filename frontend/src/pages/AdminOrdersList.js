@@ -17,7 +17,7 @@ const AdminOrdersList = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/orders', {
+      const response = await fetch('${API_BASE}/api/orders/${orderId}', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
