@@ -5,7 +5,7 @@ import ProductCard from '../components/ProductCard';
 import './Homepage.css';
 import categoryPlaceholder from '../images/categories_placeholder/placeholder.png';
 import tshirtMock from '../images/tshirt-template.jpg';
-import mugMock from '../images/uploads/1769265853030-IMG_20240707_184449.jpg';
+// import mugMock from '../images/uploads/1769265853030-IMG_20240707_184449.jpg';
 import ProductShowcase from '../components/ProductShowcase';
 import HowItWorks from '../components/HowItWorks';
 import FaqSection from '../components/FaqSection';
@@ -201,6 +201,7 @@ const IndexPage = () => {
 
             <div style={{ height: 18 }} />
 
+            {/*
             <ProductShowcase
               title={ (mugCategory && mugCategory.showcaseTitle) || 'Custom Mug Printing' }
               subtitle={ (mugCategory && (mugCategory.showcaseSubtitle || mugCategory.description)) || "Create personalized mugs with your favorite designs and messages." }
@@ -210,6 +211,7 @@ const IndexPage = () => {
               actionRoute={getCategoryPath(mugCategory)}
               reverse={true}
             />
+            */}
           </div>
         </section>
 
