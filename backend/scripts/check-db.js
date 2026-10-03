@@ -1,7 +1,7 @@
 // Diagnostic: verifies configuration and MongoDB connectivity without printing credentials.
 //   npm run check-db
 const { getConfig, describeMongoTarget } = require('../config/env');
-const { connectDatabase, disconnectDatabase } = require('../config/db');
+const { connectDatabase, disconnectDatabase, formatDatabaseError } = require('../config/db');
 const mongoose = require('mongoose');
 
 const run = async () => {
@@ -22,8 +22,8 @@ const run = async () => {
 };
 
 run().catch(async (err) => {
-  console.error(`FAILED: ${err.message}`);
-  console.error('Common causes: wrong MONGODB_URI, wrong database user/password, Atlas Network Access list does not include this host (0.0.0.0/0 for Render), cluster paused.');
+  console.error(`FAILED: ${formatDatabaseError(err)}`);
+  console.error('Confirm the Atlas cluster is running and that this client IP is allowed by its Network Access list.');
   await disconnectDatabase().catch(() => {});
   process.exit(1);
 });

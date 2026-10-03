@@ -4,7 +4,7 @@
 //   npm run migrate-uploads            # dry run
 //   npm run migrate-uploads -- --apply # perform the migration
 const { getConfig } = require('../config/env');
-const { connectDatabase, disconnectDatabase } = require('../config/db');
+const { connectDatabase, disconnectDatabase, isDatabaseError, formatDatabaseError } = require('../config/db');
 const storage = require('../services/storage');
 
 const Product = require('../models/Product');
@@ -103,7 +103,7 @@ const run = async () => {
 };
 
 run().catch(async (err) => {
-  console.error(`FAILED: ${err.message}`);
+  console.error(`FAILED: ${isDatabaseError(err) ? formatDatabaseError(err) : err.message}`);
   await disconnectDatabase().catch(() => {});
   process.exit(1);
 });

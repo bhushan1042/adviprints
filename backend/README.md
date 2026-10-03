@@ -7,11 +7,14 @@ Express + MongoDB (Mongoose) API and the built-in admin panel (`views/`).
 ```bash
 cd backend
 npm install
-cp .env.example .env     # fill in MONGODB_URI at least
 npm run dev
 ```
 
-`.env` is only read outside production. Node 20.12+ is required.
+If `backend/.env` does not exist, copy `.env.example` to `.env`; otherwise preserve the existing file and update its values. Set `MONGODB_URI` to the Atlas connection string you provide and set `MONGODB_DB_NAME=adviprints`; keep any query parameters in the URI. The configuration module loads `backend/.env` relative to `config/env.js` outside production, before validating the settings. Production reads environment variables supplied by its host and does not load `.env`. Node 20.12+ is required.
+
+The backend connects before opening its HTTP listener. To check connectivity without writing data, run `npm run check-db`. In Atlas, permit the local machine's current public IP under Network Access; do not allow access from every IP.
+
+Orders are persisted by the existing `Order` model after validation and private artwork storage. MongoDB creates the `orders` collection when the first order is successfully written. To verify saved orders, open Atlas Data Explorer, select the `adviprints` database, and inspect the `orders` collection after placing a real order through the application.
 
 ## Layout
 
@@ -32,7 +35,7 @@ views/            EJS admin panel
 
 ## Environment variables
 
-See [.env.example](./.env.example). Required in production: `MONGODB_URI`, `JWT_SECRET`, `CORS_ORIGINS`, Cloudinary credentials. The server refuses to start (exit code 1, nothing listening) when a required value is missing, when `MONGODB_URI` points at localhost, or when `STORAGE_DRIVER=local` is used in production.
+See [.env.example](./.env.example). Configure production separately with `MONGODB_URI` for the intended Atlas cluster and `MONGODB_DB_NAME=adviprints`, along with `JWT_SECRET`, `CORS_ORIGINS`, and Cloudinary credentials. The server refuses to start (exit code 1, nothing listening) when a required value is missing, when `MONGODB_URI` points at localhost, or when `STORAGE_DRIVER=local` is used in production.
 
 ## Access control
 
@@ -54,7 +57,7 @@ See [.env.example](./.env.example). Required in production: `MONGODB_URI`, `JWT_
 npm run check-db
 ```
 
-Prints the target host/database (never credentials), pings MongoDB and lists collection counts. If it fails, check in order: `MONGODB_URI` is set in the environment of the failing service, the user/password are correct (URL-encode special characters), the database user has access to that database, Atlas **Network Access** allows the host (Render has no fixed IPs; `0.0.0.0/0` is typical), the cluster is not paused. `GET /api/health` returns 503 while the database is not connected.
+Prints the target host/database (never credentials), pings MongoDB and lists collection counts. If it fails, check that `MONGODB_URI` is set in the environment of the failing service, the database credentials are correct (URL-encode special characters), the database user has access to that database, the host's IP is allowed by Atlas **Network Access**, and the cluster is running. `GET /api/health` returns 503 while the database is not connected.
 
 ## Tests
 

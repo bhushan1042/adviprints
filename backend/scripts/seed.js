@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Homepage = require('../models/Homepage');
@@ -8,15 +7,15 @@ const Subscriber = require('../models/Subscriber');
 
 
 // DESTRUCTIVE: wipes catalogue collections and inserts demo data. Local development only.
-const { loadDotEnv } = require('../config/env');
+const { getConfig } = require('../config/env');
+const { connectDatabase, disconnectDatabase, isDatabaseError, formatDatabaseError } = require('../config/db');
 
 async function run() {
-  loadDotEnv();
-  if (process.env.NODE_ENV === 'production') throw new Error('Refusing to seed: NODE_ENV is production');
+  const config = getConfig();
+  if (config.isProduction) throw new Error('Refusing to seed: NODE_ENV is production');
   if (process.env.ALLOW_SEED !== 'true') throw new Error('Refusing to seed: set ALLOW_SEED=true to confirm you want to wipe this database');
-  if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI is required');
 
-  await mongoose.connect(process.env.MONGODB_URI);
+  await connectDatabase(config);
   console.log('Connected to MongoDB for seeding');
   // clear small sets (be careful in production!)
   await Category.deleteMany({});
@@ -62,7 +61,12 @@ async function run() {
   await Subscriber.create({ email: 'test@example.com', name: 'Tester' });
 
   console.log('Seeding completed');
-  process.exit(0);
 }
 
-run().catch(err => { console.error(err); process.exit(1); });
+run()
+  .then(disconnectDatabase)
+  .catch(async (err) => {
+    console.error(isDatabaseError(err) ? formatDatabaseError(err) : err.message);
+    await disconnectDatabase().catch(() => {});
+    process.exit(1);
+  });

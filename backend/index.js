@@ -2,7 +2,7 @@
 // MongoDB, and only then start accepting traffic.
 const { getConfig, ConfigError } = require('./config/env');
 const storage = require('./services/storage');
-const { connectDatabase, disconnectDatabase } = require('./config/db');
+const { connectDatabase, disconnectDatabase, formatDatabaseError } = require('./config/db');
 const { createApp } = require('./app');
 
 const SHUTDOWN_TIMEOUT_MS = 10000;
@@ -22,8 +22,7 @@ const main = async () => {
   try {
     await connectDatabase(config);
   } catch (err) {
-    console.error(`[db] Could not connect to MongoDB: ${err.message}`);
-    console.error('[db] Check MONGODB_URI, the database user/password, and the Atlas Network Access list.');
+    console.error(`[db] Could not connect to MongoDB: ${formatDatabaseError(err)}`);
     process.exit(1);
   }
 

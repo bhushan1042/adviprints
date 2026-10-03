@@ -1,3 +1,5 @@
+const { isDatabaseError, formatDatabaseError } = require('../config/db');
+
 // Wraps a failure so the client gets a safe message while the details stay in the server log.
 const errorHandler = (err, req, res, next) => {
   if (res.headersSent) return next(err);
@@ -24,7 +26,13 @@ const errorHandler = (err, req, res, next) => {
     message = err.message;
   }
 
-  if (status >= 500) console.error(`[error] ${req.method} ${req.originalUrl}:`, err.stack || err.message);
+  if (status >= 500) {
+    if (isDatabaseError(err)) {
+      console.error(`[error] ${req.method} ${req.originalUrl}: ${formatDatabaseError(err)}`);
+    } else {
+      console.error(`[error] ${req.method} ${req.originalUrl}:`, err.stack || err.message);
+    }
+  }
   res.status(status).json({ error: message });
 };
 

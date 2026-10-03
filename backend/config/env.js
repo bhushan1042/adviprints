@@ -20,11 +20,12 @@ const list = (value) =>
     .filter(Boolean);
 
 // Never log the full connection string: it contains credentials.
-const describeMongoTarget = (uri) => {
+const describeMongoTarget = (uri, dbName) => {
   try {
     const url = new URL(uri);
-    const dbName = url.pathname.replace(/^\//, '');
-    return `${url.protocol}//${url.hostname}${dbName ? `/${dbName}` : ''}`;
+    const uriDbName = url.pathname.replace(/^\//, '');
+    const targetDbName = dbName || uriDbName;
+    return `${url.protocol}//${url.hostname}${targetDbName ? `/${targetDbName}` : ''}`;
   } catch (e) {
     return '(unparseable MongoDB URI)';
   }

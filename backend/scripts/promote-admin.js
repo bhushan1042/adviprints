@@ -2,7 +2,7 @@
 //   npm run promote-admin -- someone@example.com
 const mongoose = require('mongoose');
 const { getConfig } = require('../config/env');
-const { connectDatabase, disconnectDatabase } = require('../config/db');
+const { connectDatabase, disconnectDatabase, isDatabaseError, formatDatabaseError } = require('../config/db');
 const User = require('../models/User');
 
 const run = async () => {
@@ -17,7 +17,7 @@ const run = async () => {
 };
 
 run().catch(async (err) => {
-  console.error(err.message);
+  console.error(isDatabaseError(err) ? formatDatabaseError(err) : err.message);
   await mongoose.disconnect().catch(() => {});
   process.exit(1);
 });

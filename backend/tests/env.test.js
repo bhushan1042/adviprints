@@ -74,3 +74,12 @@ test('ADMIN_EMAILS is normalised', () => {
   const config = loadConfig(prodEnv({ ADMIN_EMAILS: ' Boss@Example.com , other@example.com ' }));
   assert.deepEqual(config.adminEmails, ['boss@example.com', 'other@example.com']);
 });
+
+test('MONGODB_DB_NAME overrides the URI path without dropping query parameters', () => {
+  const uri = 'mongodb+srv://cluster.example/other?retryWrites=true&w=majority';
+  const config = loadConfig(prodEnv({ MONGODB_URI: uri, MONGODB_DB_NAME: 'adviprints' }));
+
+  assert.equal(config.mongodbDbName, 'adviprints');
+  assert.equal(config.mongodbUri, uri);
+  assert.equal(describeMongoTarget(config.mongodbUri, config.mongodbDbName), 'mongodb+srv://cluster.example/adviprints');
+});
