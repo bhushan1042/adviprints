@@ -75,7 +75,7 @@ const loadConfig = (env = process.env) => {
     cloudName: (env.CLOUDINARY_CLOUD_NAME || '').trim(),
     apiKey: (env.CLOUDINARY_API_KEY || '').trim(),
     apiSecret: (env.CLOUDINARY_API_SECRET || '').trim(),
-    folder: (env.CLOUDINARY_FOLDER || 'test_advi').trim().replace(/^\/+|\/+$/g, '')
+    folder: (env.CLOUDINARY_FOLDER || 'adviprints').trim().replace(/^\/+|\/+$/g, '')
   };
   const hasCloudinary = Boolean(cloudinary.url || (cloudinary.cloudName && cloudinary.apiKey && cloudinary.apiSecret));
 
