@@ -1,26 +1,19 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '..', 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir);
-  },
-  filename: function (req, file, cb) {
-    const safe = file.originalname.replace(/[^a-zA-Z0-9.\-\_]/g, '-');
-    cb(null, Date.now() + '-' + safe);
+// Files are kept in memory and streamed to the storage service; nothing is written to the app filesystem.
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_IMAGE_BYTES, files: 8 },
+  fileFilter: (req, file, cb) => {
+    if (!/^image\//i.test(file.mimetype || '')) {
+      const err = new Error('Only image uploads are allowed');
+      err.status = 400;
+      return cb(err);
+    }
+    return cb(null, true);
   }
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-});
-
-module.exports = upload;
+module.exports = { upload, MAX_IMAGE_BYTES };

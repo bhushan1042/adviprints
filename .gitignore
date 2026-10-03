@@ -26,3 +26,9 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+# Runtime uploads and private artwork (never commit)
+backend/public/uploads/
+backend/private/
+
+# Templates are committed
+!.env.example

@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const { publicWriteLimiter } = require('../middleware/rateLimiters');
 const { getReviews, createReview } = require('../controllers/reviewController');
 
-// Public routes
 router.get('/', getReviews);
-router.post('/', createReview);
+router.post('/', publicWriteLimiter, createReview);
 
 module.exports = router;

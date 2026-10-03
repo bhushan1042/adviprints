@@ -1,24 +1,33 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
-import "./styles/theme.css";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './app/App';
+import './styles/theme.css';
 import { fetchBranding } from './utils/branding';
+import { resolveImageUrl } from './utils/images';
 
-// fetch branding early and apply favicon
-;(async () => {
+(async () => {
   try {
-    const b = await fetchBranding();
-    const favicon = b && (b.favicon || b.mainLogo) ? (b.favicon || b.mainLogo) : null;
-    if (favicon) {
-      const link = document.createElement('link');
-      link.rel = 'icon';
-      link.href = (favicon.startsWith('http') ? favicon : (process.env.REACT_APP_API_BASE || 'http://localhost:5000') + favicon);
-      document.head.appendChild(link);
+    const branding = await fetchBranding();
+    const faviconUrl = resolveImageUrl(branding?.favicon || branding?.mainLogo, '');
+
+    if (faviconUrl) {
+      let faviconLink = document.querySelector("link[rel='icon']");
+
+      if (!faviconLink) {
+        faviconLink = document.createElement('link');
+        faviconLink.rel = 'icon';
+        document.head.appendChild(faviconLink);
+      }
+
+      faviconLink.href = faviconUrl;
     }
-  } catch (e) { /* ignore */ }
+  } catch (error) {
+    // Ignore favicon failures.
+  }
 })();
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
+const root = ReactDOM.createRoot(document.getElementById('root'));
+
 root.render(
   <React.StrictMode>
     <App />

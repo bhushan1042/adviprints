@@ -1,9 +1,5 @@
 const notFoundHandler = (req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    path: req.path,
-    method: req.method
-  });
+  res.status(404).json({ error: 'Not Found' });
 };
 
 module.exports = notFoundHandler;

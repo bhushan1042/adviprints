@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/authenticate');
+const { requireAdmin } = require('../middleware/authenticate');
+const { validateObjectId } = require('../middleware/validateObjectId');
 const {
   listProducts,
   getFeaturedProducts,
@@ -17,11 +18,11 @@ router.get('/', listProducts);
 router.get('/featured', getFeaturedProducts);
 router.get('/best-sellers', getBestSellers);
 router.get('/new-arrivals', getNewArrivals);
-router.get('/:id', getProduct);
+router.get('/:id', validateObjectId(), getProduct);
 
 // Protected routes
-router.post('/', authenticate, createProduct);
-router.put('/:id', authenticate, updateProduct);
-router.delete('/:id', authenticate, deleteProduct);
+router.post('/', requireAdmin, createProduct);
+router.put('/:id', requireAdmin, validateObjectId(), updateProduct);
+router.delete('/:id', requireAdmin, validateObjectId(), deleteProduct);
 
 module.exports = router;

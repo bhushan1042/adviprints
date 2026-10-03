@@ -426,7 +426,7 @@
       // upload handlers
       document.getElementById('c_image_file').addEventListener('change', async (e)=>{
         const f = e.target.files[0]; if (!f) return;
-        const fd = new FormData(); fd.append('image', f);
+        const fd = new FormData(); fd.append('image', f); fd.append('folder', 'categories');
         const token = localStorage.getItem(tokenKey);
         const r = await fetch('/upload', { method:'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
         const data = await r.json(); if (!r.ok) { document.getElementById('c_err').textContent = (data && data.error) || 'Upload failed'; return; }
@@ -434,7 +434,7 @@
       });
       document.getElementById('c_banner_file').addEventListener('change', async (e)=>{
         const f = e.target.files[0]; if (!f) return;
-        const fd = new FormData(); fd.append('image', f);
+        const fd = new FormData(); fd.append('image', f); fd.append('folder', 'categories');
         const token = localStorage.getItem(tokenKey);
         const r = await fetch('/upload', { method:'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
         const data = await r.json(); if (!r.ok) { document.getElementById('c_err').textContent = (data && data.error) || 'Upload failed'; return; }
@@ -521,7 +521,7 @@
       // upload handlers for edit
       document.getElementById('c_image_file').addEventListener('change', async (e)=>{
         const f = e.target.files[0]; if (!f) return;
-        const fd = new FormData(); fd.append('image', f);
+        const fd = new FormData(); fd.append('image', f); fd.append('folder', 'categories');
         const token = localStorage.getItem(tokenKey);
         const r = await fetch('/upload', { method:'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
         const data = await r.json(); if (!r.ok) { document.getElementById('c_err').textContent = (data && data.error) || 'Upload failed'; return; }
@@ -529,7 +529,7 @@
       });
       document.getElementById('c_banner_file').addEventListener('change', async (e)=>{
         const f = e.target.files[0]; if (!f) return;
-        const fd = new FormData(); fd.append('image', f);
+        const fd = new FormData(); fd.append('image', f); fd.append('folder', 'categories');
         const token = localStorage.getItem(tokenKey);
         const r = await fetch('/upload', { method:'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
         const data = await r.json(); if (!r.ok) { document.getElementById('c_err').textContent = (data && data.error) || 'Upload failed'; return; }
@@ -670,7 +670,7 @@
         reader.readAsDataURL(file);
         // upload
         try {
-          const fd = new FormData(); fd.append('image', file);
+          const fd = new FormData(); fd.append('image', file); fd.append('folder', 'products');
           const token = localStorage.getItem(tokenKey);
           const res = await fetch('/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
           const data = await res.json();
@@ -757,7 +757,7 @@
         reader.onload = () => { preview.src = reader.result; preview.style.display = 'block'; };
         reader.readAsDataURL(file);
         try {
-          const fd = new FormData(); fd.append('image', file);
+          const fd = new FormData(); fd.append('image', file); fd.append('folder', 'products');
           const token = localStorage.getItem(tokenKey);
           const res = await fetch('/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
           const data = await res.json();
@@ -892,7 +892,7 @@
         if (!files.length) return;
         document.getElementById('hp_err').textContent = 'Uploading...';
         for (const f of files){
-          const fd = new FormData(); fd.append('image', f);
+          const fd = new FormData(); fd.append('image', f); fd.append('folder', 'banners');
           const token = localStorage.getItem(tokenKey);
           try {
             const r = await fetch('/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
@@ -917,8 +917,8 @@
         const showcaseFeatures = (document.getElementById('c_showcase_features') && document.getElementById('c_showcase_features').value) || undefined;
         const showcaseCtaText = (document.getElementById('c_showcase_cta') && document.getElementById('c_showcase_cta').value.trim()) || undefined;
         const res2 = await api('/admin/homepage', { method: 'POST', body: JSON.stringify({ title, bannerSlides: payloadSlides }) });
-        const res = await api('/categories', { method:'POST', body: JSON.stringify({ name, description, imageUrl, bannerImageUrl, showcaseTitle, showcaseSubtitle, showcaseFeatures, showcaseCtaText }) });
-        if (!res.ok) return document.getElementById('c_err').textContent = (res.body && res.body.error) || 'Failed';
+        if (!res2.ok) return alert((res2.body && res2.body.error) || 'Failed to save homepage');
+        alert('Homepage saved');
       });
     }
 
@@ -945,6 +945,17 @@
       content.querySelectorAll('[data-action="view-order"]').forEach(b => b.addEventListener('click', (e)=>{ const id = e.target.getAttribute('data-id'); renderOrderDetail(id); }));
     }
 
+    // Customer artwork is private: fetch it with the admin token and show it through an object URL.
+    function loadOrderArtwork(orderId) {
+      content.querySelectorAll('img[data-artwork]').forEach(async (img) => {
+        try {
+          const resp = await fetch('/api/orders/' + orderId + '/artwork/' + img.dataset.artwork, { headers: authHeader() });
+          if (!resp.ok) throw new Error('unavailable');
+          img.src = URL.createObjectURL(await resp.blob());
+        } catch (e) { img.alt = 'Image unavailable'; }
+      });
+    }
+
     // Order detail
     async function renderOrderDetail(id) {
       pageTitle.textContent = 'Order Details';
@@ -961,15 +972,16 @@
       // Images with download buttons
       if (o.originalImagePath || o.previewImagePath || o.uploadedImageData) {
         html += `<div style="margin-top:12px"><div style="display:flex;gap:16px;flex-wrap:wrap">`;
-        if (o.originalImagePath) html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div><p style="margin:0;font-size:12px;font-weight:bold;margin-bottom:4px"><strong>Original Design</strong></p><img src="${o.originalImagePath}" style="max-width:150px;height:150px;border-radius:6px;border:1px solid #eee;object-fit:cover"/></div><button class="btn" style="font-size:12px;padding:6px 10px" onclick="downloadProtectedFile('${id}','original')" title="Download original image">⬇️ Download</button></div>`;
-        if (o.previewImagePath) html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div><p style="margin:0;font-size:12px;font-weight:bold;margin-bottom:4px"><strong>Preview</strong></p><img src="${o.previewImagePath}" style="max-width:150px;height:150px;border-radius:6px;border:1px solid #eee;object-fit:cover"/></div><button class="btn" style="font-size:12px;padding:6px 10px" onclick="downloadProtectedFile('${id}','preview')" title="Download preview image">⬇️ Download</button></div>`;
-        if (o.uploadedImageData) html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div><p style="margin:0;font-size:12px;font-weight:bold;margin-bottom:4px"><strong>Customer Upload</strong></p><img src="${o.uploadedImageData}" style="max-width:150px;height:150px;border-radius:6px;border:1px solid #eee;object-fit:cover"/></div><button class="btn" style="font-size:12px;padding:6px 10px" onclick="downloadProtectedFile('${id}','uploaded')" title="Download customer upload">⬇️ Download</button></div>`;
+        if (o.originalImagePath) html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div><p style="margin:0;font-size:12px;font-weight:bold;margin-bottom:4px"><strong>Original Design</strong></p><img data-artwork="original" alt="Original design" style="max-width:150px;height:150px;border-radius:6px;border:1px solid #eee;object-fit:cover"/></div><button class="btn" style="font-size:12px;padding:6px 10px" onclick="downloadProtectedFile('${id}','original')" title="Download original image">⬇️ Download</button></div>`;
+        if (o.previewImagePath) html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div><p style="margin:0;font-size:12px;font-weight:bold;margin-bottom:4px"><strong>Preview</strong></p><img data-artwork="preview" alt="Preview" style="max-width:150px;height:150px;border-radius:6px;border:1px solid #eee;object-fit:cover"/></div><button class="btn" style="font-size:12px;padding:6px 10px" onclick="downloadProtectedFile('${id}','preview')" title="Download preview image">⬇️ Download</button></div>`;
+        if (o.uploadedImageData) html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div><p style="margin:0;font-size:12px;font-weight:bold;margin-bottom:4px"><strong>Customer Upload</strong></p><img data-artwork="uploaded" alt="Customer upload" style="max-width:150px;height:150px;border-radius:6px;border:1px solid #eee;object-fit:cover"/></div><button class="btn" style="font-size:12px;padding:6px 10px" onclick="downloadProtectedFile('${id}','uploaded')" title="Download customer upload">⬇️ Download</button></div>`;
         html += `</div></div>`;
       }
       
       html += `</div>`;
       html += `<div class="panel"><h4>Update Status</h4><div style="display:flex;gap:8px;align-items:center"><select id="statusSelect" style="flex:1;max-width:200px"><option value="pending" ${o.status==='pending'?'selected':''}> Pending</option><option value="processing" ${o.status==='processing'?'selected':''}> Processing</option><option value="completed" ${o.status==='completed'?'selected':''}> Completed</option><option value="cancelled" ${o.status==='cancelled'?'selected':''}> Cancelled</option></select><button class="btn primary" id="updateStatusBtn">Update</button></div></div>`;
       content.innerHTML = html;
+      loadOrderArtwork(id);
       document.getElementById('backOrdersBtn').addEventListener('click', () => renderOrders());
       document.getElementById('deleteOrderBtn').addEventListener('click', async () => {
         if (!confirm('Are you sure you want to delete this order?\n\nThis will:\n- Delete the order from database\n- Remove all associated images (Original, Preview, Upload)\n\nThis action cannot be undone.')) return;

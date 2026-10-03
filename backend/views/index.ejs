@@ -83,8 +83,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || data || 'Login failed');
+                const raw = await res.text();
+                let data;
+                try { data = JSON.parse(raw); } catch (e) { data = raw; }
+                if (!res.ok) throw new Error((data && data.error) || data || 'Login failed');
                 if (data.token) {
                     localStorage.setItem('admin_token', data.token);
                     window.location.href = '/admin';

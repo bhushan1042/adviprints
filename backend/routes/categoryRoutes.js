@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/authenticate');
+const { requireAdmin } = require('../middleware/authenticate');
+const { validateObjectId } = require('../middleware/validateObjectId');
 const {
   listCategories,
   getCategory,
@@ -16,8 +17,8 @@ router.get('/:id', getCategory);
 router.get('/:id/products', getCategoryProducts);
 
 // Protected routes
-router.post('/', authenticate, createCategory);
-router.put('/:id', authenticate, updateCategory);
-router.delete('/:id', authenticate, deleteCategory);
+router.post('/', requireAdmin, createCategory);
+router.put('/:id', requireAdmin, validateObjectId(), updateCategory);
+router.delete('/:id', requireAdmin, validateObjectId(), deleteCategory);
 
 module.exports = router;

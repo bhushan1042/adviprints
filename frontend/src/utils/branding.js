@@ -1,21 +1,58 @@
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+import api, { isRequestAborted } from '../services/api';
 
-let _cache = null;
+let cache = null;
+let pendingRequest = null;
 
-export async function fetchBranding() {
-  if (_cache) return _cache;
+const readStoredBranding = () => {
   try {
-    const res = await fetch(`${API_BASE}/api/branding`);
-    if (!res.ok) return {};
-    const json = await res.json();
-    _cache = json || {};
-    // persist lightly for app startup
-    try { localStorage.setItem('branding', JSON.stringify(_cache)); } catch (e) {}
-    return _cache;
-  } catch (err) {
-    try { const stored = JSON.parse(localStorage.getItem('branding')||'null'); if (stored) return stored; } catch(e){}
+    return JSON.parse(localStorage.getItem('branding') || 'null') || {};
+  } catch (error) {
     return {};
   }
+};
+
+export async function fetchBranding({ signal, force = false } = {}) {
+  if (!force && cache) {
+    return cache;
+  }
+
+  if (!force && pendingRequest) {
+    return pendingRequest;
+  }
+
+  pendingRequest = api
+    .get('/api/branding', { signal })
+    .then(({ data }) => {
+      cache = data || {};
+
+      try {
+        localStorage.setItem('branding', JSON.stringify(cache));
+      } catch (error) {
+        // Ignore storage write failures.
+      }
+
+      return cache;
+    })
+    .catch((error) => {
+      if (isRequestAborted(error)) {
+        throw error;
+      }
+
+      const storedBranding = readStoredBranding();
+
+      if (Object.keys(storedBranding).length > 0) {
+        cache = storedBranding;
+      }
+
+      return storedBranding;
+    })
+    .finally(() => {
+      pendingRequest = null;
+    });
+
+  return pendingRequest;
 }
 
-export function getCachedBranding() { return _cache || (JSON.parse(localStorage.getItem('branding')||'null') || {}); }
+export function getCachedBranding() {
+  return cache || readStoredBranding();
+}

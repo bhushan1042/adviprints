@@ -1,61 +1,41 @@
 const BrandingSettings = require('../models/BrandingSettings');
+const { saveImage } = require('../services/storage');
+
+const BRANDING_FIELDS = ['mainLogo', 'footerLogo', 'mobileLogo', 'favicon', 'darkLogo', 'lightLogo', 'emailLogo'];
 
 // Get current branding settings
 const getBranding = async (req, res) => {
   try {
     const b = await BrandingSettings.findOne().sort({ updatedAt: -1 }).lean();
-
-    if (!b) {
-      return res.json({
-        mainLogo: '',
-        footerLogo: '',
-        mobileLogo: '',
-        favicon: '',
-        darkLogo: '',
-        lightLogo: '',
-        emailLogo: ''
-      });
-    }
-
-    return res.json({
-      mainLogo: b.mainLogo || '',
-      footerLogo: b.footerLogo || '',
-      mobileLogo: b.mobileLogo || '',
-      favicon: b.favicon || '',
-      darkLogo: b.darkLogo || '',
-      lightLogo: b.lightLogo || '',
-      emailLogo: b.emailLogo || ''
-    });
+    const out = {};
+    for (const field of BRANDING_FIELDS) out[field] = (b && b[field]) || '';
+    return res.json(out);
   } catch (err) {
-    console.error('GET /api/branding error', err);
+    console.error('[branding] get failed:', err.message);
     res.status(500).json({ error: 'Server Error' });
   }
 };
 
-// Update branding (admin)
-const updateBranding = async (req, res) => {
+// Update branding (admin). Uploaded files replace the field; otherwise the posted value (or empty) is kept.
+const updateBranding = async (req, res, next) => {
   try {
     const files = req.files || {};
     const body = req.body || {};
+    const payload = {};
 
-    const makeUrl = (file) => file ? (`/uploads/${file.filename}`) : null;
+    for (const field of BRANDING_FIELDS) {
+      const file = (files[field] || [])[0];
+      if (file) {
+        payload[field] = (await saveImage(file.buffer, { folder: 'branding', visibility: 'public' })).url;
+      } else {
+        payload[field] = typeof body[field] === 'string' ? body[field] : '';
+      }
+    }
 
-    const payload = {
-      mainLogo: makeUrl((files.mainLogo || [])[0]) || body.mainLogo || '',
-      footerLogo: makeUrl((files.footerLogo || [])[0]) || body.footerLogo || '',
-      mobileLogo: makeUrl((files.mobileLogo || [])[0]) || body.mobileLogo || '',
-      favicon: makeUrl((files.favicon || [])[0]) || body.favicon || '',
-      darkLogo: makeUrl((files.darkLogo || [])[0]) || body.darkLogo || '',
-      lightLogo: makeUrl((files.lightLogo || [])[0]) || body.lightLogo || '',
-      emailLogo: makeUrl((files.emailLogo || [])[0]) || body.emailLogo || ''
-    };
-
-    // Upsert single branding document
     const updated = await BrandingSettings.findOneAndUpdate({}, payload, { upsert: true, new: true, setDefaultsOnInsert: true });
     return res.json({ message: 'Branding updated', branding: updated });
   } catch (err) {
-    console.error('POST /api/admin/branding error', err);
-    res.status(500).json({ error: 'Failed to update branding' });
+    next(err);
   }
 };
 

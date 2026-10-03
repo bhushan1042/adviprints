@@ -2,6 +2,9 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Review = require('../models/Review');
 
+// productCode and createdAt are system-managed and can not be changed through the API.
+const UPDATABLE_FIELDS = ['name', 'category', 'price', 'stock', 'imageUrl', 'imageFilename', 'imageMime', 'imageSize', 'description', 'colours'];
+
 // List all products with review aggregation
 const listProducts = async (req, res) => {
   try {
@@ -158,7 +161,10 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = {};
+    for (const key of UPDATABLE_FIELDS) {
+      if (req.body[key] !== undefined) updates[key] = req.body[key];
+    }
 
     if (updates.category) {
       const cat = await Category.findById(updates.category).catch(() => null) || await Category.findOne({ name: updates.category }).catch(() => null);
@@ -166,12 +172,7 @@ const updateProduct = async (req, res) => {
       updates.category = cat.name;
     }
 
-    if (updates.imageUrl) {
-      updates.imageUrl = updates.imageUrl;
-      updates.imageFilename = updates.imageFilename || updates.imageFilename;
-      updates.imageMime = updates.imageMime || updates.imageMime;
-      updates.imageSize = updates.imageSize ? Number(updates.imageSize) : updates.imageSize;
-    }
+    if (updates.imageSize) updates.imageSize = Number(updates.imageSize);
 
     const updated = await Product.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
     if (!updated) return res.status(404).json({ error: 'Product not found' });

@@ -1,14 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/authenticate');
-const upload = require('../config/multer');
+const { requireAdmin } = require('../middleware/authenticate');
+const { upload } = require('../config/multer');
 const { getBranding, updateBranding } = require('../controllers/brandingController');
 
-// Public routes
-router.get('/', getBranding);
-
-// Protected routes
-router.post('/', authenticate, upload.fields([
+const brandingUpload = upload.fields([
   { name: 'mainLogo', maxCount: 1 },
   { name: 'footerLogo', maxCount: 1 },
   { name: 'mobileLogo', maxCount: 1 },
@@ -16,6 +12,12 @@ router.post('/', authenticate, upload.fields([
   { name: 'darkLogo', maxCount: 1 },
   { name: 'lightLogo', maxCount: 1 },
   { name: 'emailLogo', maxCount: 1 }
-]), updateBranding);
+]);
+
+// Public
+router.get('/', getBranding);
+
+// Admin
+router.post('/', requireAdmin, brandingUpload, updateBranding);
 
 module.exports = router;
