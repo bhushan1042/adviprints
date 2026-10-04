@@ -74,23 +74,12 @@ const CategoryPage = () => {
 
   return (
     <div className="category-page">
-      <section className="hero-carousel category-hero" aria-label={`${category.name} hero`}>
-        <div className="hero-track">
-          <div className="hero-slide active">
-            <div className="hero-bg" style={{ backgroundImage: `url(${heroImage})` }} />
-            <div className="hero-banner">
-              <img
-                className="hero-inline-img"
-                src={heroImage}
-                alt={category.name}
-                width="1400"
-                height="550"
-                style={{ aspectRatio: '1400 / 550', objectFit: 'contain' }}
-                onError={(event) => applyImageFallback(event, categoryPlaceholder)}
-              />
-            </div>
-          </div>
-        </div>
+      <section className="category-banner" aria-label={`${category.name} banner`}>
+        <img
+          src={heroImage}
+          alt={category.name}
+          onError={(event) => applyImageFallback(event, categoryPlaceholder)}
+        />
       </section>
 
       <main className="container">
