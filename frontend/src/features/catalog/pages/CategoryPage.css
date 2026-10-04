@@ -20,8 +20,9 @@
   height: auto;
   aspect-ratio: 3 / 1;
   margin: 0;
+  padding: 0;
   overflow: hidden;
-  background: #eef2f7;
+  background: transparent;
 }
 
 .category-page .category-banner img {
@@ -32,10 +33,17 @@
   object-position: center;
 }
 
+/* Override the global section padding imported from Homepage.css.
+   The category banner should sit directly under the navbar with no grey bars. */
+.category-page .category-banner {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 @media (max-width: 768px) {
   .category-page .category-banner {
     aspect-ratio: 2 / 1;
-    border-radius: 16px;
+    border-radius: 0;
   }
 }
 
