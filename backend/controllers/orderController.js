@@ -90,6 +90,8 @@ const createOrder = async (req, res, next) => {
       productName: text(body.productName, 200) || 'Custom T-Shirt',
       productPrice,
       productCode: text(body.productCode, 50) || null,
+      size: text(body.size, 30) || null,
+      colour: text(body.colour, 50) || null,
       designTemplate,
       originalImagePath: images.originalImage,
       previewImagePath: images.previewImage,

@@ -29,6 +29,8 @@ const orderSchema = new mongoose.Schema({
   productName: String,
   productPrice: Number,
   productCode: String, // unique product code for printing
+  size: String,
+  colour: String,
 
   // Design data
   designTemplate: String, // 'centered' or 'chest'

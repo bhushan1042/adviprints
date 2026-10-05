@@ -12,6 +12,7 @@ const productSchema = new mongoose.Schema({
   imageSize: Number,
   description: String,
   colours: [String],
+  sizes: { type: [String], default: [] },
   // unique product code for printing/identification
   productCode: {
     type: String,

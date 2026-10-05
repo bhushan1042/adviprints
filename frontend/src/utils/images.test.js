@@ -28,3 +28,9 @@ test('preserves absolute urls and falls back for empty values', () => {
   expect(resolveImageUrl('', 'fallback')).toBe('fallback');
   expect(resolveImageUrl('blob:1234', 'fallback')).toBe('blob:1234');
 });
+
+test('keeps frontend public and bundled assets off the backend URL', () => {
+  const { resolveImageUrl } = require('./images');
+  expect(resolveImageUrl('/images/tshirt-template.jpg')).toBe('/images/tshirt-template.jpg');
+  expect(resolveImageUrl('/assets/category-placeholder.png')).toBe('/assets/category-placeholder.png');
+});

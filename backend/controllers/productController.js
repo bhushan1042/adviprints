@@ -3,7 +3,11 @@ const Category = require('../models/Category');
 const Review = require('../models/Review');
 
 // productCode and createdAt are system-managed and can not be changed through the API.
-const UPDATABLE_FIELDS = ['name', 'category', 'price', 'stock', 'imageUrl', 'imageFilename', 'imageMime', 'imageSize', 'description', 'colours'];
+const UPDATABLE_FIELDS = ['name', 'category', 'price', 'stock', 'imageUrl', 'imageFilename', 'imageMime', 'imageSize', 'description', 'colours', 'sizes'];
+
+const cleanStringList = (value) => Array.isArray(value)
+  ? [...new Set(value.filter((item) => typeof item === 'string').map((item) => item.trim()).filter(Boolean))].slice(0, 50)
+  : [];
 
 // List all products with review aggregation
 const listProducts = async (req, res) => {
@@ -127,7 +131,7 @@ const getProduct = async (req, res) => {
 // Create product
 const createProduct = async (req, res) => {
   try {
-    const { name, category, price, stock, imageUrl, imageFilename, imageMime, imageSize, description } = req.body;
+    const { name, category, price, stock, imageUrl, imageFilename, imageMime, imageSize, description, colours, sizes } = req.body;
 
     if (!name || price == null) return res.status(400).json({ error: 'Name and price are required' });
 
@@ -141,7 +145,16 @@ const createProduct = async (req, res) => {
     const count = await Product.countDocuments();
     const productCode = `TS-${String(count + 1001).padStart(5, '0')}`;
 
-    const createObj = { name, category: catName || category || null, price, stock: stock || 0, description, productCode };
+    const createObj = {
+      name,
+      category: catName || category || null,
+      price,
+      stock: stock || 0,
+      description,
+      productCode,
+      colours: cleanStringList(colours),
+      sizes: cleanStringList(sizes)
+    };
     if (imageUrl) {
       createObj.imageUrl = imageUrl;
       createObj.imageFilename = imageFilename || null;
@@ -165,6 +178,9 @@ const updateProduct = async (req, res) => {
     for (const key of UPDATABLE_FIELDS) {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     }
+
+    if (updates.colours !== undefined) updates.colours = cleanStringList(updates.colours);
+    if (updates.sizes !== undefined) updates.sizes = cleanStringList(updates.sizes);
 
     if (updates.category) {
       const cat = await Category.findById(updates.category).catch(() => null) || await Category.findOne({ name: updates.category }).catch(() => null);

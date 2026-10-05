@@ -117,7 +117,7 @@ const OrderSuccess = () => {
           <div className={styles.orderId}>{order._id.substring(0, 12)}...</div>
           <div className={styles.details}>
             <span>Placed on {formatDate(order.createdAt)}</span>
-            <span>•</span>
+            <span>ï¿½</span>
             <span className={styles.status}>{order.status.toUpperCase()}</span>
           </div>
         </div>
@@ -151,9 +151,21 @@ const OrderSuccess = () => {
                 <span className={styles.label}>Product</span>
                 <span className={styles.value}>{order.productName || 'Custom T-Shirt'}</span>
               </div>
+              {order.size ? (
+                <div className={styles.detailRow}>
+                  <span className={styles.label}>Size</span>
+                  <span className={styles.value}>{order.size}</span>
+                </div>
+              ) : null}
+              {order.colour ? (
+                <div className={styles.detailRow}>
+                  <span className={styles.label}>Colour</span>
+                  <span className={styles.value}>{order.colour}</span>
+                </div>
+              ) : null}
               <div className={styles.detailRow}>
                 <span className={styles.label}>Price</span>
-                <span className={styles.value}>?{Number(order.productPrice || 0).toFixed(2)}</span>
+                <span className={styles.value}>Rs {Number(order.productPrice || 0).toFixed(2)}</span>
               </div>
               <div className={styles.detailRow}>
                 <span className={styles.label}>Quantity</span>
@@ -162,7 +174,7 @@ const OrderSuccess = () => {
               <div className={styles.divider} />
               <div className={styles.detailRow}>
                 <span className={styles.label}>Total</span>
-                <span className={`${styles.value} ${styles.total}`}>?{Number(order.totalPrice || 0).toFixed(2)}</span>
+                <span className={`${styles.value} ${styles.total}`}>Rs {Number(order.totalPrice || 0).toFixed(2)}</span>
               </div>
               {!order.originalImagePath ? (
                 <div className={styles.designInfo}>
@@ -228,8 +240,7 @@ const OrderSuccess = () => {
         </div>
 
         <div className={styles.message}>
-          <p>A confirmation email has been sent to <strong>{order.customerEmail}</strong></p>
-          <p>You will receive tracking updates via SMS and Email</p>
+          <p>Your order has been submitted. Keep your order ID for future enquiries.</p>
         </div>
       </div>
     </div>

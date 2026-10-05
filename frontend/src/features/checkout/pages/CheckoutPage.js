@@ -7,7 +7,7 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [cartItems, setCartItems] = useState([]);
-  const [designData, setDesignData] = useState(null);
+  const [checkoutError, setCheckoutError] = useState('');
   const [step, setStep] = useState('address'); // address, payment, review
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -22,35 +22,36 @@ const CheckoutPage = () => {
     landmark: ''
   });
 
-  const [paymentMethod, setPaymentMethod] = useState('card');
-  
-  const [cardData, setCardData] = useState({
-    cardNumber: '',
-    cardName: '',
-    expiryDate: '',
-    cvv: ''
-  });
-
-  const [upiData, setUpiData] = useState({
-    upiId: ''
-  });
+  const paymentMethod = 'cod';
 
   useEffect(() => {
     // Get design data from location state (passed from PreviewPage)
     const stateData = location.state?.designData;
     const stateProduct = location.state?.product;
-    if (stateData) {
-      setDesignData(stateData);
-      // Create a single cart item from the design data
-      if (stateProduct) {
-        setCartItems([{
-          id: Date.now(),
-          product: stateProduct,
-          designData: stateData,
-          quantity: 1,
-          price: stateProduct?.price || 19.99
-        }]);
-      }
+    const orderDetails = location.state?.orderDetails;
+
+    if (
+      stateData?.originalImage &&
+      stateData?.uploadedImage &&
+      stateProduct?.id &&
+      orderDetails?.size &&
+      orderDetails?.colour &&
+      Number.isInteger(orderDetails?.quantity) &&
+      orderDetails.quantity > 0
+    ) {
+      setCheckoutError('');
+      setCartItems([{
+        product: stateProduct,
+        productName: stateProduct.name,
+        designData: stateData,
+        quantity: orderDetails.quantity,
+        size: orderDetails.size,
+        colour: orderDetails.colour,
+        price: Number(stateProduct.price)
+      }]);
+    } else {
+      setCartItems([]);
+      setCheckoutError('Checkout needs a selected product, size, colour, quantity, and completed design. Return to a product page to start again.');
     }
   }, [location.state]);
 
@@ -59,41 +60,9 @@ const CheckoutPage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCardChange = (e) => {
-    const { name, value } = e.target;
-    let formatted = value;
-    
-    if (name === 'cardNumber') {
-      formatted = value.replace(/\s+/g, '').replace(/(\d{4})/g, '$1 ').trim();
-    } else if (name === 'expiryDate') {
-      formatted = value.replace(/\D/g, '');
-      if (formatted.length >= 2) {
-        formatted = formatted.slice(0, 2) + '/' + formatted.slice(2, 4);
-      }
-    } else if (name === 'cvv') {
-      formatted = value.replace(/\D/g, '').slice(0, 3);
-    }
-    
-    setCardData(prev => ({ ...prev, [name]: formatted }));
-  };
-
-  const handleUpiChange = (e) => {
-    const { name, value } = e.target;
-    setUpiData(prev => ({ ...prev, [name]: value }));
-  };
-
   const validateAddress = () => {
     return formData.fullName && formData.email && formData.phone && 
            formData.address && formData.city && formData.state && formData.pincode;
-  };
-
-  const validateCard = () => {
-    return cardData.cardNumber.replace(/\s/g, '').length === 16 &&
-           cardData.cardName && cardData.expiryDate && cardData.cvv.length === 3;
-  };
-
-  const validateUpi = () => {
-    return upiData.upiId && upiData.upiId.includes('@');
   };
 
   const handlePlaceOrder = async () => {
@@ -107,14 +76,6 @@ const CheckoutPage = () => {
     }
 
     if (step === 'payment') {
-      if (paymentMethod === 'card' && !validateCard()) {
-        alert('Please enter valid card details');
-        return;
-      }
-      if (paymentMethod === 'upi' && !validateUpi()) {
-        alert('Please enter valid UPI ID');
-        return;
-      }
       setStep('review');
       return;
     }
@@ -137,16 +98,18 @@ const CheckoutPage = () => {
               zipCode: formData.pincode,
               country: 'India'
             },
-            productId: item.product?._id,
-            productName: item.product?.name || 'Custom T-Shirt',
-            productPrice: item.product?.price || item.price || 19.99,
+            productId: item.product?._id || item.product?.id,
+            productName: item.productName,
+            productPrice: item.price,
             productCode: item.product?.productCode || null,
+            size: item.size,
+            colour: item.colour,
             designTemplate: item.designData?.template || 'centered',
             originalImage: item.designData?.originalImage || '',
             previewImage: item.designData?.previewImage || '',
             uploadedImage: item.designData?.uploadedImage || '',
             position: item.designData?.position || {},
-            quantity: item.quantity || 1,
+            quantity: item.quantity,
             totalPrice: (item.price * item.quantity).toFixed(2),
             paymentMethod
           };
@@ -173,10 +136,24 @@ const CheckoutPage = () => {
   };
 
   const calculateTotal = () => {
-    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const tax = subtotal * 0.18;
-    return subtotal + tax + 50;
+    return cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
+
+  if (checkoutError) {
+    return (
+      <div className={styles.checkoutPage}>
+        <div className={styles.checkoutContainer}>
+          <div className={styles.formSection}>
+            <h2>Unable to continue to checkout</h2>
+            <p role="alert">{checkoutError}</p>
+            <button className={styles.placeOrderBtn} onClick={() => navigate('/category/all')}>
+              Browse Products
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.checkoutPage}>
@@ -297,126 +274,11 @@ const CheckoutPage = () => {
 
             {step === 'payment' && (
               <div className={styles.paymentForm}>
-                <h2>Payment Method</h2>
-
-                <div className={styles.paymentOptions}>
-                  <label className={`${styles.paymentOption} ${paymentMethod === 'card' ? styles.selected : ''}`}>
-                    <input
-                      type="radio"
-                      value="card"
-                      checked={paymentMethod === 'card'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                    />
-                    <span className={styles.optionLabel}>💳 Credit/Debit Card</span>
-                  </label>
-
-                  <label className={`${styles.paymentOption} ${paymentMethod === 'upi' ? styles.selected : ''}`}>
-                    <input
-                      type="radio"
-                      value="upi"
-                      checked={paymentMethod === 'upi'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                    />
-                    <span className={styles.optionLabel}>📱 UPI</span>
-                  </label>
-
-                  <label className={`${styles.paymentOption} ${paymentMethod === 'cod' ? styles.selected : ''}`}>
-                    <input
-                      type="radio"
-                      value="cod"
-                      checked={paymentMethod === 'cod'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                    />
-                    <span className={styles.optionLabel}>🏠 Cash on Delivery</span>
-                  </label>
+                <h2>Payment</h2>
+                <div className={styles.codInfo}>
+                  <div className={styles.codIcon}>Cash</div>
+                  <p>Cash on Delivery is selected. No online payment is collected on this website.</p>
                 </div>
-
-                {paymentMethod === 'card' && (
-                  <div className={styles.cardForm}>
-                    <div className={styles.cardPreview}>
-                      <div className={styles.cardChip}>Chip</div>
-                      <div className={styles.cardNumber}>
-                        {cardData.cardNumber || 'XXXX XXXX XXXX XXXX'}
-                      </div>
-                      <div className={styles.cardFooter}>
-                        <span>{cardData.cardName || 'CARDHOLDER NAME'}</span>
-                        <span>{cardData.expiryDate || 'MM/YY'}</span>
-                      </div>
-                    </div>
-
-                    <div className={styles.formGroup}>
-                      <label>Cardholder Name</label>
-                      <input
-                        type="text"
-                        name="cardName"
-                        value={cardData.cardName}
-                        onChange={handleCardChange}
-                        placeholder="Name on card"
-                        maxLength="30"
-                      />
-                    </div>
-
-                    <div className={styles.formGroup}>
-                      <label>Card Number</label>
-                      <input
-                        type="text"
-                        name="cardNumber"
-                        value={cardData.cardNumber}
-                        onChange={handleCardChange}
-                        placeholder="1234 5678 9012 3456"
-                        maxLength="19"
-                      />
-                    </div>
-
-                    <div className={styles.formRow}>
-                      <div className={styles.formGroup}>
-                        <label>Expiry Date</label>
-                        <input
-                          type="text"
-                          name="expiryDate"
-                          value={cardData.expiryDate}
-                          onChange={handleCardChange}
-                          placeholder="MM/YY"
-                          maxLength="5"
-                        />
-                      </div>
-                      <div className={styles.formGroup}>
-                        <label>CVV</label>
-                        <input
-                          type="text"
-                          name="cvv"
-                          value={cardData.cvv}
-                          onChange={handleCardChange}
-                          placeholder="123"
-                          maxLength="3"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {paymentMethod === 'upi' && (
-                  <div className={styles.upiForm}>
-                    <div className={styles.upiIcon}>📱</div>
-                    <div className={styles.formGroup}>
-                      <label>UPI ID</label>
-                      <input
-                        type="text"
-                        name="upiId"
-                        value={upiData.upiId}
-                        onChange={handleUpiChange}
-                        placeholder="yourname@upi"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {paymentMethod === 'cod' && (
-                  <div className={styles.codInfo}>
-                    <div className={styles.codIcon}>🏠</div>
-                    <p>Pay when you receive your order</p>
-                  </div>
-                )}
               </div>
             )}
 
@@ -436,20 +298,17 @@ const CheckoutPage = () => {
                 </div>
 
                 <div className={styles.reviewSection}>
-                  <h3>Payment Method</h3>
-                  <p className={styles.reviewText}>
-                    {paymentMethod === 'card' && `💳 Card ending in ${cardData.cardNumber.slice(-4)}`}
-                    {paymentMethod === 'upi' && `📱 UPI: ${upiData.upiId}`}
-                    {paymentMethod === 'cod' && '🏠 Cash on Delivery'}
-                  </p>
-                  <button className={styles.editBtn} onClick={() => setStep('payment')}>Edit</button>
+                  <h3>Payment</h3>
+                  <p className={styles.reviewText}>Cash on Delivery. Online payment is not collected.</p>
                 </div>
 
                 <div className={styles.reviewSection}>
                   <h3>Items</h3>
                   {cartItems.map((item, idx) => (
                     <div key={idx} className={styles.reviewItem}>
-                      <span>{item.productName} (x{item.quantity})</span>
+                      <span>
+                        {item.productName} — {item.size}, {item.colour} (x{item.quantity})
+                      </span>
                       <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
@@ -465,7 +324,7 @@ const CheckoutPage = () => {
               <div className={styles.summaryItems}>
                 {cartItems.map((item, idx) => (
                   <div key={idx} className={styles.summaryItem}>
-                    <span>{item.productName}</span>
+                    <span>{item.productName} ({item.size}, {item.colour})</span>
                     <span>x{item.quantity}</span>
                     <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
@@ -477,16 +336,6 @@ const CheckoutPage = () => {
               <div className={styles.summaryRow}>
                 <span>Subtotal</span>
                 <span>₹{cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
-              </div>
-
-              <div className={styles.summaryRow}>
-                <span>Tax (18%)</span>
-                <span>₹{(cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 0.18).toFixed(2)}</span>
-              </div>
-
-              <div className={styles.summaryRow}>
-                <span>Shipping</span>
-                <span>₹50.00</span>
               </div>
 
               <div className={styles.divider}></div>
@@ -509,7 +358,7 @@ const CheckoutPage = () => {
                 onClick={() => {
                   if (step === 'payment') setStep('address');
                   else if (step === 'review') setStep('payment');
-                  else navigate('/cart');
+                  else navigate(`/product/${cartItems[0]?.product?.id || ''}`);
                 }}
               >
                 ← Back

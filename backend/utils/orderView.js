@@ -26,6 +26,8 @@ const toPublicOrder = (order) => {
     address: { city: address.city, state: address.state, country: address.country },
     productName: o.productName,
     productPrice: o.productPrice,
+    size: o.size,
+    colour: o.colour,
     quantity: o.quantity,
     totalPrice: o.totalPrice,
     designTemplate: o.designTemplate,

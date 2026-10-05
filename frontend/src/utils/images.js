@@ -17,7 +17,7 @@ export const resolveImageUrl = (url, fallback = '') => {
     return trimmedUrl;
   }
 
-  if (trimmedUrl.startsWith('/')) {
+  if (trimmedUrl.startsWith('/uploads/')) {
     return `${API_BASE}${trimmedUrl}`;
   }
 

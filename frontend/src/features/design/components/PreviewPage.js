@@ -2,7 +2,15 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './PreviewPage.module.css';
 
-const PreviewPage = ({ product, designData, onEdit, onClose }) => {
+const PreviewPage = ({
+  product,
+  designData,
+  selectedSize,
+  selectedColour,
+  quantity = 1,
+  onEdit,
+  onClose
+}) => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -25,7 +33,13 @@ const PreviewPage = ({ product, designData, onEdit, onClose }) => {
     // CheckoutPage will send it directly to backend
     
     setTimeout(() => {
-      navigate('/checkout', { state: { designData, product } });
+      navigate('/checkout', {
+        state: {
+          designData,
+          product,
+          orderDetails: { size: selectedSize, colour: selectedColour, quantity }
+        }
+      });
     }, 500);
   };
 
@@ -66,7 +80,17 @@ const PreviewPage = ({ product, designData, onEdit, onClose }) => {
 
               <div className={styles.detailRow}>
                 <span>Size</span>
-                <strong>XL (Customizable)</strong>
+                <strong>{selectedSize || 'Not selected'}</strong>
+              </div>
+
+              <div className={styles.detailRow}>
+                <span>Colour</span>
+                <strong>{selectedColour || 'Not selected'}</strong>
+              </div>
+
+              <div className={styles.detailRow}>
+                <span>Quantity</span>
+                <strong>{quantity}</strong>
               </div>
 
               <div className={styles.detailRow}>
@@ -83,13 +107,12 @@ const PreviewPage = ({ product, designData, onEdit, onClose }) => {
 
               <div className={styles.detailRow} style={{ fontSize: '18px', fontWeight: '700' }}>
                 <span>Price</span>
-                <strong>${Number(product?.price || 19.99).toFixed(2)}</strong>
+                <strong>Rs {(Number(product?.price || 0) * quantity).toFixed(2)}</strong>
               </div>
 
               <div className={styles.priceNote}>
-                <p>✓ Premium quality fabric</p>
-                <p>✓ High-definition printing</p>
-                <p>✓ Free shipping on orders $50+</p>
+                <p>Review the product details and design before continuing.</p>
+                <p>Online payment is not collected by this checkout.</p>
               </div>
             </div>
 

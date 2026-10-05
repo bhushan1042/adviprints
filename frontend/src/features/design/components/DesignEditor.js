@@ -22,11 +22,16 @@ const TEMPLATES = {
   },
 };
 
-const DesignEditor = ({ onSave, onCancel, selectedTemplate = 'centered' }) => {
+const DesignEditor = ({
+  onSave,
+  onCancel,
+  selectedTemplate = 'centered',
+  initialDesign = null
+}) => {
   const stageRef = useRef(null);
   const imageRef = useRef(null);
   const transformerRef = useRef(null);
-  const [uploadedImage, setUploadedImage] = useState(null);
+  const [uploadedImage, setUploadedImage] = useState(initialDesign?.uploadedImage || null);
   const [uploadedImageObj] = useImage(uploadedImage);
   const [tshirtImage] = useImage(TEMPLATES[selectedTemplate].image);
   const [isSelected, setIsSelected] = useState(false);
@@ -209,10 +214,17 @@ const DesignEditor = ({ onSave, onCancel, selectedTemplate = 'centered' }) => {
                 <KonvaImage
                   ref={imageRef}
                   image={uploadedImageObj}
-                  x={template.defaultPosition.x - template.defaultPosition.width / 2}
-                  y={template.defaultPosition.y - template.defaultPosition.height / 2}
+                  x={Number.isFinite(initialDesign?.position?.x)
+                    ? initialDesign.position.x
+                    : template.defaultPosition.x - template.defaultPosition.width / 2}
+                  y={Number.isFinite(initialDesign?.position?.y)
+                    ? initialDesign.position.y
+                    : template.defaultPosition.y - template.defaultPosition.height / 2}
                   width={template.defaultPosition.width}
                   height={template.defaultPosition.height}
+                  scaleX={Number.isFinite(initialDesign?.position?.scaleX) ? initialDesign.position.scaleX : 1}
+                  scaleY={Number.isFinite(initialDesign?.position?.scaleY) ? initialDesign.position.scaleY : 1}
+                  rotation={Number.isFinite(initialDesign?.position?.rotation) ? initialDesign.position.rotation : 0}
                   draggable
                   onClick={handleImageClick}
                   onDragMove={handleDragMove}
@@ -243,7 +255,7 @@ const DesignEditor = ({ onSave, onCancel, selectedTemplate = 'centered' }) => {
         </Stage>
 
         <div className={styles.instructions}>
-          <p>?? Drag to move • Corner handles to resize • Scroll wheel to rotate</p>
+          <p>?? Drag to move ï¿½ Corner handles to resize ï¿½ Scroll wheel to rotate</p>
         </div>
       </div>
 

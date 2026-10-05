@@ -2,9 +2,10 @@ const DEFAULT_DEV_API_BASE = 'http://localhost:5000';
 
 export const normalizeApiBase = (value) => value.replace(/\/+$/, '');
 
-const rawApiBase = typeof process.env.REACT_APP_API_BASE === 'string'
-  ? process.env.REACT_APP_API_BASE.trim()
-  : '';
+const configuredApiBase = typeof __API_BASE__ === 'string'
+  ? __API_BASE__
+  : process.env.REACT_APP_API_BASE;
+const rawApiBase = typeof configuredApiBase === 'string' ? configuredApiBase.trim() : '';
 
 if (process.env.NODE_ENV === 'production' && !rawApiBase) {
   throw new Error(

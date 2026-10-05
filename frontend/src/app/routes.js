@@ -1,9 +1,14 @@
 import React, { Suspense, lazy } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
-const IndexPage = lazy(() => import('../features/home/pages/IndexPage'));
-const CategoryPage = lazy(() => import('../features/catalog/pages/CategoryPage'));
-const ProductPage = lazy(() => import('../features/catalog/pages/ProductPage'));
+const StorefrontLayout = lazy(() => import('../components/layout/StorefrontLayout'));
+const Home = lazy(() => import('../pages/Home'));
+const Category = lazy(() => import('../pages/Category'));
+const ProductDetails = lazy(() => import('../pages/ProductDetails'));
+const About = lazy(() => import('../pages/About'));
+const HowItWorks = lazy(() => import('../pages/HowItWorks'));
+const FAQ = lazy(() => import('../pages/FAQ'));
+const Contact = lazy(() => import('../pages/Contact'));
 const CheckoutPage = lazy(() => import('../features/checkout/pages/CheckoutPage'));
 const OrderConfirmation = lazy(() => import('../features/checkout/pages/OrderConfirmation'));
 const OrderSuccess = lazy(() => import('../features/checkout/pages/OrderSuccess'));
@@ -19,9 +24,15 @@ const AppRoutes = () => {
   return (
     <Suspense fallback={<SuspenseFallback />}>
       <Routes>
-        <Route path="/" element={<IndexPage />} />
-        <Route path="/category/:id" element={<CategoryPage />} />
-        <Route path="/product/:id" element={<ProductPage />} />
+        <Route element={<StorefrontLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/category/:slug" element={<Category />} />
+          <Route path="/product/:slug" element={<ProductDetails />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/contact" element={<Contact />} />
+        </Route>
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/order-confirmation" element={<OrderConfirmation />} />
         <Route path="/order-success/:id" element={<OrderSuccess />} />
@@ -33,6 +44,7 @@ const AppRoutes = () => {
           <Route path="orders" element={<AdminOrdersList />} />
           <Route path="orders/:orderId" element={<AdminOrderDetails />} />
         </Route>
+        <Route path="*" element={<div className="page-loader">Page not found.</div>} />
       </Routes>
     </Suspense>
   );
