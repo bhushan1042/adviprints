@@ -32,10 +32,7 @@ const CheckoutPage = () => {
 
     if (
       stateData?.originalImage &&
-      stateData?.uploadedImage &&
       stateProduct?.id &&
-      orderDetails?.size &&
-      orderDetails?.colour &&
       Number.isInteger(orderDetails?.quantity) &&
       orderDetails.quantity > 0
     ) {
@@ -45,13 +42,13 @@ const CheckoutPage = () => {
         productName: stateProduct.name,
         designData: stateData,
         quantity: orderDetails.quantity,
-        size: orderDetails.size,
-        colour: orderDetails.colour,
+        size: orderDetails.size || null,
+        colour: orderDetails.colour || null,
         price: Number(stateProduct.price)
       }]);
     } else {
       setCartItems([]);
-      setCheckoutError('Checkout needs a selected product, size, colour, quantity, and completed design. Return to a product page to start again.');
+      setCheckoutError('Checkout needs a selected product, quantity, and completed design. Return to a product page to start again.');
     }
   }, [location.state]);
 
@@ -307,7 +304,7 @@ const CheckoutPage = () => {
                   {cartItems.map((item, idx) => (
                     <div key={idx} className={styles.reviewItem}>
                       <span>
-                        {item.productName} — {item.size}, {item.colour} (x{item.quantity})
+                        {item.productName} — Size: {item.size || 'Not specified'}, colour: {item.colour || 'Not specified'} (x{item.quantity})
                       </span>
                       <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                     </div>
@@ -324,7 +321,7 @@ const CheckoutPage = () => {
               <div className={styles.summaryItems}>
                 {cartItems.map((item, idx) => (
                   <div key={idx} className={styles.summaryItem}>
-                    <span>{item.productName} ({item.size}, {item.colour})</span>
+                    <span>{item.productName} (Size: {item.size || 'Not specified'}, colour: {item.colour || 'Not specified'})</span>
                     <span>x{item.quantity}</span>
                     <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                   </div>

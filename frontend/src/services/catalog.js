@@ -28,6 +28,19 @@ export const mapCategory = (category, index = 0) => ({
   styles: 'Explore collection'
 });
 
+const mapProductColour = (value) => {
+  const rawColour = String(value || '').trim();
+  const separator = rawColour.indexOf('|');
+
+  if (separator === -1) {
+    return { name: rawColour, hex: rawColour };
+  }
+
+  const name = rawColour.slice(0, separator).trim();
+  const hex = rawColour.slice(separator + 1).trim();
+  return { name: name || hex, hex: hex || name };
+};
+
 export const mapProduct = (product, categories = []) => {
   const rawCategory = product?.category;
   const category = categories.find((item) =>
@@ -50,10 +63,7 @@ export const mapProduct = (product, categories = []) => {
     category: category?.slug || slugify(rawCategory),
     categoryName: category?.name || String(rawCategory || ''),
     tags: [],
-    colors: colours.map((colour) => ({
-      name: String(colour),
-      hex: String(colour)
-    })),
+    colors: colours.map(mapProductColour),
     sizes: Array.isArray(product?.sizes) ? product.sizes : [],
     images: [...new Set(images.length ? images : [categoryPlaceholder])],
     rating: Number(product?.averageRating) || 0,

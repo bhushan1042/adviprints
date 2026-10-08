@@ -122,15 +122,11 @@ export default function ProductDetails() {
   const selectedColour = product?.colors[selectedColor]?.name || '';
 
   const startCustomization = () => {
-    if (!product?.sizes.length) {
+    if (product?.sizes.length && !selectedSize) {
       setSizeError(true);
       return;
     }
-    if (!selectedSize) {
-      setSizeError(true);
-      return;
-    }
-    if (!selectedColour) {
+    if (product?.colors.length && !selectedColour) {
       setSizeError(true);
       return;
     }
@@ -278,7 +274,7 @@ export default function ProductDetails() {
             <div className="mt-7">
               <div className="mb-2.5 flex items-center justify-between">
                 <span className="font-display text-sm font-bold text-navy-900">
-                  Colour: <span className="font-normal text-navy-600">{selectedColour}</span>
+                  Colour: <span className="font-normal text-navy-600">{selectedColour || (product.colors.length ? 'Select a colour' : 'Not specified')}</span>
                 </span>
               </div>
               {product.colors.length ? (
@@ -300,7 +296,7 @@ export default function ProductDetails() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-error-600">Colour options have not been configured for this product.</p>
+                <p className="text-sm text-navy-500">No colours are configured; you can continue without selecting one.</p>
               )}
             </div>
 
@@ -309,7 +305,7 @@ export default function ProductDetails() {
               <div className="mb-2.5 flex items-center justify-between">
                 <span className="font-display text-sm font-bold text-navy-900">Size</span>
                 <span className="inline-flex items-center gap-1 text-xs font-medium text-navy-500">
-                  <Ruler size={13} /> Select a size
+                  <Ruler size={13} /> {product.sizes.length ? 'Select a size' : 'Not specified'}
                 </span>
               </div>
               {product.sizes.length > 0 ? (
@@ -329,15 +325,13 @@ export default function ProductDetails() {
                 ))}
               </div>
               ) : (
-                <p className="text-sm text-error-600">Size options have not been configured for this product.</p>
+                <p className="text-sm text-navy-500">No sizes are configured; you can continue without selecting one.</p>
               )}
-              {sizeError && (
+              {sizeError && (product.sizes.length > 0 || product.colors.length > 0) && (
                 <p className="mt-2 text-sm font-medium text-error-600">
-                  {!product.sizes.length
-                    ? 'This product cannot be customized until sizes are configured.'
-                    : !selectedColour
-                      ? 'This product cannot be customized until colour options are configured.'
-                      : 'Please select a size to continue.'}
+                  {!selectedColour && product.colors.length > 0
+                    ? 'Please select a colour to continue.'
+                    : 'Please select a size to continue.'}
                 </p>
               )}
             </div>
@@ -450,7 +444,7 @@ export default function ProductDetails() {
           <DesignEditor
             selectedTemplate={selectedTemplate}
             product={product}
-            selectedColour={product.colors[selectedColor]?.hex || selectedColour}
+            selectedColour={product.colors[selectedColor]?.hex || selectedColour || '#f5f6f7'}
             selectedSize={selectedSize}
             initialDesign={designData}
             onSave={(data) => {

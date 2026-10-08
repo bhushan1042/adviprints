@@ -1,0 +1,239 @@
+.page {
+  display: grid;
+  gap: 22px;
+  max-width: 1120px;
+  margin: 0 auto;
+  color: #172b4d;
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.header h1 {
+  margin: 4px 0 8px;
+  color: #102a43;
+  font-size: clamp(24px, 3vw, 32px);
+}
+
+.header p {
+  margin: 0;
+  color: #627d98;
+}
+
+.eyebrow {
+  color: #d86a24 !important;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.refreshButton,
+.presetButton {
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: white;
+  color: #243b53;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.refreshButton {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+}
+
+.refreshButton:hover,
+.presetButton:hover {
+  border-color: #ed8b45;
+  color: #b94b0b;
+}
+
+.searchLabel,
+.fields label {
+  display: grid;
+  gap: 7px;
+  color: #243b53;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.searchLabel input,
+.fields textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: white;
+  color: #102a43;
+  font: inherit;
+}
+
+.searchLabel input {
+  max-width: 480px;
+  padding: 11px 13px;
+}
+
+.fields textarea {
+  resize: vertical;
+  min-height: 112px;
+  padding: 10px 12px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.searchLabel input:focus,
+.fields textarea:focus {
+  border-color: #ed8b45;
+  outline: 3px solid rgb(237 139 69 / 16%);
+}
+
+.fields small {
+  min-height: 34px;
+  color: #627d98;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.productList {
+  display: grid;
+  gap: 16px;
+}
+
+.productCard {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 5px 18px rgb(16 42 67 / 5%);
+}
+
+.productHeading,
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.productHeading h2 {
+  margin: 0 0 5px;
+  color: #102a43;
+  font-size: 19px;
+}
+
+.productHeading p {
+  margin: 0;
+  color: #627d98;
+  font-size: 13px;
+}
+
+.status {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.configured {
+  background: #e8f7ef;
+  color: #18794e;
+}
+
+.incomplete {
+  background: #fff4e5;
+  color: #9a4d00;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.presetButton {
+  justify-self: start;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.actions {
+  padding-top: 14px;
+  border-top: 1px solid #edf2f7;
+}
+
+.message,
+.success,
+.notice,
+.error {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.message,
+.notice {
+  color: #627d98;
+}
+
+.success {
+  color: #18794e;
+}
+
+.error {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.saveButton {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 9px;
+  background: #102a43;
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.saveButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #d86a24;
+}
+
+.saveButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 720px) {
+  .header,
+  .productHeading,
+  .actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .fields {
+    grid-template-columns: 1fr;
+  }
+
+  .fields small {
+    min-height: auto;
+  }
+
+  .refreshButton,
+  .saveButton {
+    width: 100%;
+  }
+}

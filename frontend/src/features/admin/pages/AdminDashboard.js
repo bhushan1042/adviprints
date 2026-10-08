@@ -64,6 +64,12 @@ const AdminDashboard = () => {
           </button>
           <button
             className={styles.navItem}
+            onClick={() => handleNavigation('/admin/products')}
+          >
+            👕 Product Variants
+          </button>
+          <button
+            className={styles.navItem}
             onClick={() => handleNavigation('/admin/branding')}
           >
             🎨 Branding

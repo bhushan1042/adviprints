@@ -15,6 +15,7 @@ const OrderSuccess = lazy(() => import('../features/checkout/pages/OrderSuccess'
 const AdminLogin = lazy(() => import('../features/admin/pages/AdminLogin'));
 const AdminDashboard = lazy(() => import('../features/admin/pages/AdminDashboard'));
 const AdminBranding = lazy(() => import('../features/admin/pages/AdminBranding'));
+const AdminProducts = lazy(() => import('../features/admin/pages/AdminProducts'));
 const AdminOrdersList = lazy(() => import('../features/admin/pages/AdminOrdersList'));
 const AdminOrderDetails = lazy(() => import('../features/admin/pages/AdminOrderDetails'));
 
@@ -41,6 +42,7 @@ const AppRoutes = () => {
           <Route index element={<div />} />
           <Route path="dashboard" element={<div />} />
           <Route path="branding" element={<AdminBranding />} />
+          <Route path="products" element={<AdminProducts />} />
           <Route path="orders" element={<AdminOrdersList />} />
           <Route path="orders/:orderId" element={<AdminOrderDetails />} />
         </Route>
