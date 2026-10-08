@@ -347,19 +347,17 @@ const CheckoutPage = () => {
                 onClick={handlePlaceOrder}
                 disabled={isProcessing}
               >
-                {isProcessing ? 'Processing...' : step === 'address' ? 'Continue to Payment' : step === 'payment' ? 'Review Order' : 'Place Order'}
+                {isProcessing ? 'Processing...' : step === 'address' ? 'Cash on delivery' : step === 'payment' ? 'Review Order' : 'Place Order'}
               </button>
 
-              <button
-                className={styles.backBtn}
-                onClick={() => {
-                  if (step === 'payment') setStep('address');
-                  else if (step === 'review') setStep('payment');
-                  else navigate(`/product/${cartItems[0]?.product?.id || ''}`);
-                }}
-              >
-                ← Back
-              </button>
+              {step === 'address' && (
+                <button
+                  className={styles.backBtn}
+                  onClick={() => navigate(`/product/${cartItems[0]?.product?.id || ''}`)}
+                >
+                  ← Back
+                </button>
+              )}
             </div>
           </div>
         </div>

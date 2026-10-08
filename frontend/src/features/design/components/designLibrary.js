@@ -96,13 +96,147 @@ export const DESIGN_TEMPLATES = [
     name: 'Made by You',
     description: 'A photo-ready frame with editable name text.',
     elements: [
-      { type: 'sticker', text: 'ADD YOUR PHOTO', x: 170, y: 220, width: 160, height: 110, fontSize: 14, fill: '#d9e2ec', align: 'center', frame: true },
+      { type: 'sticker', text: 'ADD YOUR PHOTO', x: 170, y: 220, width: 160, height: 110, fontSize: 14, fill: '#d9e2ec', align: 'center', frame: true, photoPlaceholder: true },
       { type: 'text', text: 'YOUR NAME', x: 145, y: 340, width: 210, height: 32, fontSize: 21, fontFamily: 'Arial', fontStyle: 'bold', fill: '#102a43', align: 'center', letterSpacing: 2 }
     ]
   }
 ];
 
 export const TEMPLATE_CATEGORIES = ['All', ...DESIGN_TEMPLATES.map((template) => template.category)];
+
+const PRINT_ZONE_PRESETS = {
+  tShirt: {
+    front: [
+      { id: 'center-chest', name: 'Center Chest', x: .32, y: .34, width: .36, height: .22 },
+      { id: 'left-chest', name: 'Left Chest', x: .57, y: .35, width: .14, height: .14 },
+      { id: 'right-chest', name: 'Right Chest', x: .29, y: .35, width: .14, height: .14 },
+      { id: 'upper-chest', name: 'Upper Chest', x: .34, y: .28, width: .32, height: .14 },
+      { id: 'lower-front', name: 'Lower Front', x: .34, y: .57, width: .32, height: .18 },
+      { id: 'left-sleeve', name: 'Left Sleeve', x: .76, y: .3, width: .16, height: .13 },
+      { id: 'right-sleeve', name: 'Right Sleeve', x: .08, y: .3, width: .16, height: .13 }
+    ],
+    back: [
+      { id: 'upper-back', name: 'Upper Back', x: .32, y: .28, width: .36, height: .16 },
+      { id: 'center-back', name: 'Center Back', x: .32, y: .38, width: .36, height: .3 }
+    ]
+  },
+  polo: {
+    front: [
+      { id: 'left-chest', name: 'Left Chest', x: .57, y: .35, width: .14, height: .14 },
+      { id: 'right-chest', name: 'Right Chest', x: .29, y: .35, width: .14, height: .14 }
+    ],
+    back: [
+      { id: 'center-back', name: 'Center Back', x: .32, y: .38, width: .36, height: .3 }
+    ]
+  },
+  sleeveless: {
+    front: [
+      { id: 'center-chest', name: 'Center Chest', x: .32, y: .34, width: .36, height: .22 }
+    ],
+    back: [
+      { id: 'upper-back', name: 'Upper Back', x: .32, y: .28, width: .36, height: .16 },
+      { id: 'center-back', name: 'Center Back', x: .32, y: .38, width: .36, height: .3 }
+    ]
+  }
+};
+
+export const getPrintZones = (product, side, canvasWidth, canvasHeight) => {
+  const configuredZones = Array.isArray(product?.printZones)
+    ? product.printZones.filter((zone) => zone.side === side)
+    : null;
+  const productType = `${product?.productType || product?.type || ''} ${product?.category || ''} ${product?.name || ''}`.toLowerCase();
+  const preset = /polo/.test(productType)
+    ? PRINT_ZONE_PRESETS.polo
+    : /sleeveless|tank top/.test(productType)
+      ? PRINT_ZONE_PRESETS.sleeveless
+      : PRINT_ZONE_PRESETS.tShirt;
+  const zones = configuredZones?.length ? configuredZones : preset[side];
+  return zones.map((zone) => ({
+    ...zone,
+    x: zone.x * canvasWidth,
+    y: zone.y * canvasHeight,
+    width: zone.width * canvasWidth,
+    height: zone.height * canvasHeight
+  }));
+};
+
+export const constrainPositionToArea = (position, currentPosition, bounds, area) => {
+  const offsetX = position.x - currentPosition.x;
+  const offsetY = position.y - currentPosition.y;
+  const minOffsetX = area.x - bounds.x - offsetX;
+  const maxOffsetX = area.x + area.width - bounds.x - bounds.width - offsetX;
+  const minOffsetY = area.y - bounds.y - offsetY;
+  const maxOffsetY = area.y + area.height - bounds.y - bounds.height - offsetY;
+  const correctionX = minOffsetX > maxOffsetX
+    ? area.x + area.width / 2 - bounds.x - bounds.width / 2 - offsetX
+    : Math.max(minOffsetX, Math.min(maxOffsetX, 0));
+  const correctionY = minOffsetY > maxOffsetY
+    ? area.y + area.height / 2 - bounds.y - bounds.height / 2 - offsetY
+    : Math.max(minOffsetY, Math.min(maxOffsetY, 0));
+
+  return {
+    x: position.x + correctionX,
+    y: position.y + correctionY
+  };
+};
+
+export const getCoverCrop = (sourceWidth, sourceHeight, targetWidth, targetHeight) => {
+  const targetRatio = targetWidth / Math.max(targetHeight, 1);
+  const sourceRatio = sourceWidth / Math.max(sourceHeight, 1);
+  return sourceRatio > targetRatio
+    ? {
+      x: (sourceWidth - sourceHeight * targetRatio) / 2,
+      y: 0,
+      width: sourceHeight * targetRatio,
+      height: sourceHeight
+    }
+    : {
+      x: 0,
+      y: (sourceHeight - sourceWidth / targetRatio) / 2,
+      width: sourceWidth,
+      height: sourceWidth / targetRatio
+    };
+};
+
+export const fitElementsToArea = (elements, area) => {
+  if (!elements.length) return elements;
+  const bounds = elements.reduce((result, element) => ({
+    left: Math.min(result.left, element.x),
+    top: Math.min(result.top, element.y),
+    right: Math.max(result.right, element.x + element.width * (element.scaleX || 1)),
+    bottom: Math.max(result.bottom, element.y + element.height * (element.scaleY || 1))
+  }), {
+    left: Infinity,
+    top: Infinity,
+    right: -Infinity,
+    bottom: -Infinity
+  });
+  const width = bounds.right - bounds.left;
+  const height = bounds.bottom - bounds.top;
+  const alreadyInside = (
+    bounds.left >= area.x &&
+    bounds.top >= area.y &&
+    bounds.right <= area.x + area.width &&
+    bounds.bottom <= area.y + area.height
+  );
+  if (alreadyInside) return elements.map((element) => ({ ...element }));
+
+  const scale = Math.min(1, area.width / width, area.height / height);
+  const centerX = (bounds.left + bounds.right) / 2;
+  const centerY = (bounds.top + bounds.bottom) / 2;
+  const areaCenterX = area.x + area.width / 2;
+  const areaCenterY = area.y + area.height / 2;
+  const offsetX = areaCenterX - centerX * scale;
+  const offsetY = areaCenterY - centerY * scale;
+
+  return elements.map((element) => ({
+    ...element,
+    x: element.x * scale + offsetX,
+    y: element.y * scale + offsetY,
+    scaleX: (element.scaleX || 1) * scale,
+    scaleY: (element.scaleY || 1) * scale
+  }));
+};
 
 let elementSequence = 0;
 const createId = (prefix) => `${prefix}-${Date.now()}-${++elementSequence}`;
@@ -140,7 +274,7 @@ export const createTextElement = (text = 'Your text', fill = '#102a43') => ({
   locked: false
 });
 
-export const createStickerElement = (text) => ({
+export const createStickerElement = (text, fill = '#000000', fontFamily = 'Arial') => ({
   id: createId('sticker'),
   type: 'sticker',
   text,
@@ -149,7 +283,8 @@ export const createStickerElement = (text) => ({
   width: 90,
   height: 64,
   fontSize: 48,
-  fill: '#e87524',
+  fontFamily,
+  fill,
   align: 'center',
   rotation: 0,
   scaleX: 1,

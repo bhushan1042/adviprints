@@ -161,7 +161,7 @@ const ProductPage = () => {
   };
 
   if (loading) {
-    return <div className={styles.loader}>Loading…</div>;
+    return <div className={styles.loader}>Loadingï¿½</div>;
   }
 
   if (error) {
@@ -362,9 +362,10 @@ const ProductPage = () => {
         <Footer />
       </main>
 
-      <Suspense fallback={<div className={styles.loader}>Loading editor…</div>}>
+      <Suspense fallback={<div className={styles.loader}>Loading editorï¿½</div>}>
         {showTemplateSelector && (
           <TemplateSelector
+            product={product}
             selectedTemplate={selectedTemplate}
             onSelectTemplate={setSelectedTemplate}
             onConfirm={() => {
@@ -381,6 +382,10 @@ const ProductPage = () => {
         {designStep === 'editor' && selectedTemplate && (
           <DesignEditor
             selectedTemplate={selectedTemplate}
+            product={product}
+            selectedColour={selectedColour}
+            selectedSize={selectedSize}
+            quantity={qty}
             onSave={(data) => {
               setDesignData(data);
               setDesignStep('preview');
@@ -397,6 +402,9 @@ const ProductPage = () => {
           <PreviewPage
             product={product}
             designData={designData}
+            selectedSize={selectedSize}
+            selectedColour={selectedColour}
+            quantity={qty}
             onEdit={() => setDesignStep('editor')}
             onClose={() => {
               setDesignStep(null);

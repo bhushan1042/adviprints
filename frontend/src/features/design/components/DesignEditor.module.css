@@ -59,17 +59,12 @@
   color: #102a43;
 }
 
-.brandMark {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border-radius: 10px;
-  background: #102a43;
-  color: #fff;
-  font-family: Georgia, serif;
-  font-size: 18px;
-  font-weight: 700;
+.brandLogo {
+  width: auto;
+  max-width: 132px;
+  height: 32px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .brandCopy {
@@ -205,9 +200,9 @@
 }
 
 .toolRail > .activeTool {
-  border-color: #f5dfd0;
-  background: #fff7f1;
-  color: #c95d18;
+  border-color: #d8e0e7;
+  background: #f1f4f7;
+  color: #102a43;
 }
 
 .railSpacer {
@@ -689,8 +684,8 @@
   border: 1px solid #e4e9ee;
   border-radius: 10px;
   background: #f8fafb;
-  color: #d66b23;
-  font-family: Georgia, serif;
+  color: #111827;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Georgia, serif;
   font-size: 20px;
   font-weight: 700;
   cursor: pointer;
@@ -699,8 +694,8 @@
 
 .stickerGrid button:hover {
   transform: translateY(-1px);
-  border-color: #f0ad80;
-  background: #fff8f3;
+  border-color: #94a3b8;
+  background: #f1f5f9;
 }
 
 .helperCopy {
@@ -765,7 +760,7 @@
 
 .fieldLabel input[type="range"] {
   width: 100%;
-  accent-color: #e87524;
+  accent-color: #334155;
 }
 
 .propertyRow {
@@ -792,8 +787,8 @@
 }
 
 .inlineControl:hover {
-  border-color: #e87524;
-  color: #c65c18;
+  border-color: #64748b;
+  color: #102a43;
 }
 
 .inkPalette {
@@ -813,7 +808,7 @@
 }
 
 .inkPalette button.selectedInk {
-  outline: 2px solid #e87524;
+  outline: 2px solid #334155;
   outline-offset: 2px;
 }
 
@@ -957,6 +952,29 @@
   gap: 3px;
 }
 
+.placementControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 5px;
+  color: #718096;
+  font-size: 9px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.placementControl select {
+  max-width: 128px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid #dfe6ec;
+  border-radius: 7px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-size: 10px;
+}
+
 .viewSwitch {
   display: flex;
   gap: 2px;
@@ -1026,12 +1044,17 @@
   flex: 0 0 auto;
   transform-origin: center center;
   transition: transform .18s ease;
+  touch-action: none;
 }
 
 .canvasStage > div {
   overflow: visible !important;
   border-radius: 12px;
   filter: drop-shadow(0 17px 22px rgba(16, 42, 67, .13));
+}
+
+.canvasStageBack > div {
+  filter: none;
 }
 
 .canvasCaption {
@@ -1064,7 +1087,7 @@
 .safeDot {
   width: 8px;
   height: 8px;
-  border: 1px dashed #e87524;
+  border: 1px dashed #475569;
   border-radius: 2px;
 }
 
@@ -1353,9 +1376,9 @@
     padding: 0 12px;
   }
 
-  .brandMark {
-    width: 30px;
-    height: 30px;
+  .brandLogo {
+    max-width: 92px;
+    height: 28px;
   }
 
   .brandCopy strong {
@@ -1495,6 +1518,25 @@
 
   .canvasControls {
     gap: 0;
+  }
+
+  .placementControl {
+    gap: 0;
+    padding: 0 3px;
+  }
+
+  .placementControl > span {
+    display: none;
+  }
+
+  .placementControl select {
+    max-width: 112px;
+    height: 28px;
+    padding: 0 5px;
+  }
+
+  .zoomValue {
+    display: none;
   }
 
   .canvasControls > .topDivider,
