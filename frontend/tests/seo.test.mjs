@@ -119,6 +119,6 @@ test('prerender fails safe when the API is down: no partial sitemap, strict mode
 test('robots.txt allows crawling and references the sitemap', async () => {
   const robots = await fs.readFile(new URL('../public/robots.txt', import.meta.url), 'utf8');
   assert.match(robots, /User-agent: \*/);
-  assert.match(robots, /Sitemap: https:\/\/www\.adviprints\.com\/sitemap\.xml/);
+  assert.match(robots, /Sitemap: https:\/\/adviprints\.com\/sitemap\.xml/);
   assert.ok(!/^Disallow:\s*\/\s*$/m.test(robots));
 });

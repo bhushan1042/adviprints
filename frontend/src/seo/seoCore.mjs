@@ -1,7 +1,7 @@
 // Framework-free SEO helpers shared by the React app (runtime metadata) and the
 // build-time prerender script (static HTML + sitemap). Keep this file dependency-free.
 
-export const SITE_URL = 'https://www.adviprints.com';
+export const SITE_URL = 'https://adviprints.com';
 export const SITE_NAME = 'Adviprints';
 export const DEFAULT_IMAGE = `${SITE_URL}/logo_large.png`;
 export const CURRENCY = 'INR';
