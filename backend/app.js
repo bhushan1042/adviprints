@@ -38,6 +38,12 @@ const createApp = (config) => {
   // cross-origin by the React frontend, hence the relaxed resource policy.
   app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
+  // The API and the built-in admin pages are not search content; legacy public images stay indexable.
+  app.use((req, res, next) => {
+    if (!req.path.startsWith('/uploads/')) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    next();
+  });
+
   const allowedOrigins = new Set(config.corsOrigins);
   app.use(
     cors({

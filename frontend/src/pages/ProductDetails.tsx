@@ -11,6 +11,8 @@ import SectionHeading from '@/components/ui/SectionHeading';
 import { useReveal } from '@/hooks/useReveal';
 import { getProduct, listCategoryProducts, listProductReviews } from '@/services/catalog';
 import { getErrorMessage, isRequestAborted } from '@/services/api';
+import Seo from '@/seo/Seo';
+import { productMeta } from '@/seo/seoCore.mjs';
 import useCatalogCategories from '@/hooks/useCatalogCategories';
 import { applyImageFallback } from '@/utils/images';
 import categoryPlaceholder from '@/assets/placeholders/category-placeholder.png';
@@ -159,14 +161,20 @@ export default function ProductDetails() {
   if (loadError || !product) {
     return (
       <div role="alert" className="container-px mx-auto max-w-7xl py-20 text-center text-error-600">
+        <Seo title="Product not found" description="This product could not be found." noindex />
         {loadError || 'Product not found.'}
         <div className="mt-5"><Button to="/category/all" variant="outline">Browse products</Button></div>
       </div>
     );
   }
 
+  const categoryForSeo = categories.find((item) => item.slug === product.category);
+  const seoMeta = productMeta(product, categoryForSeo);
+  seoMeta.image = product.imageUrl ? product.images[0] : undefined;
+
   return (
     <div className="bg-white">
+      <Seo {...seoMeta} />
       {/* breadcrumb */}
       <div className="border-b border-navy-100 bg-navy-50">
         <div className="container-px mx-auto max-w-7xl py-4">
@@ -206,7 +214,7 @@ export default function ProductDetails() {
                     activeImage === i ? 'border-orange-500 ring-2 ring-orange-200' : 'border-transparent hover:border-navy-200'
                   }`}
                 >
-                  <img src={img} alt="" className="aspect-square w-full object-cover" onError={(event) => applyImageFallback(event, categoryPlaceholder)} />
+                  <img src={img} alt={` - view ${i + 1}`} className="aspect-square w-full object-cover" onError={(event) => applyImageFallback(event, categoryPlaceholder)} />
                 </button>
               ))}
               <button

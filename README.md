@@ -56,3 +56,13 @@ The production build fails on purpose when `REACT_APP_API_BASE` is missing, so i
 ## Why uploaded images used to disappear
 
 The old backend saved uploads to `backend/public/uploads` on the web service's local disk and stored only the relative path in MongoDB. Render web service disks are ephemeral: every deploy, restart or instance replacement resets them to the git checkout, while the database records survived and pointed at files that no longer existed. Uploads now go to Cloudinary and the stored value is the absolute Cloudinary URL.
+
+## SEO
+
+- Per-route metadata: `frontend/src/seo/Seo.js` (runtime) and `frontend/src/seo/seoCore.mjs` (shared builders). Private/transactional routes (`/checkout`, `/order-*`, `/admin*`, 404) render `noindex`; non-production hosts (localhost, `*.onrender.com`) are always `noindex`.
+- `npm run build` (frontend) runs `scripts/prerender.mjs` after `vite build`. It fetches `/categories` and `/products` from `REACT_APP_API_BASE` and writes route-specific HTML (`/product/<id>`, `/category/<slug>`, static pages) plus `sitemap.xml`. If the API is unreachable it warns and keeps `public/sitemap.xml` (informational pages only); set `SEO_STRICT=1` to fail the build instead.
+- Products/categories added after a deploy get their own HTML and sitemap entry on the next frontend deploy (trigger a Render deploy hook after catalog changes). Until then they still work and set metadata client-side.
+- Render static sites cannot return a real 404 status for unknown routes (the `/* -> /index.html` rewrite returns 200); unknown product/category pages are marked `noindex`.
+- Cloudflare/Render: keep ONE redirect rule apex `adviprints.com` -> `https://www.adviprints.com` (301), and no app-level redirects. Optionally add a Render response header `X-Robots-Tag: noindex` for the `*.onrender.com` hostname only.
+- Tests: `npm run test:seo` (frontend), `npm test` (backend).
+- Search Console: add the `adviprints.com` domain property (DNS TXT record in Cloudflare), submit `https://www.adviprints.com/sitemap.xml`, then use URL Inspection > Request indexing on `/` and a sample product and category.

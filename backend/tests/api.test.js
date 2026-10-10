@@ -183,3 +183,8 @@ test('health reports unavailable when the database is down and other routes retu
     db.isDatabaseReady = () => true;
   }
 });
+
+test('API responses carry X-Robots-Tag noindex', async () => {
+  const res = await fetch(`${base}/api/health`);
+  assert.match(res.headers.get('x-robots-tag') || '', /noindex/);
+});

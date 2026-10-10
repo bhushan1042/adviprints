@@ -6,6 +6,8 @@ import SectionHeading from '@/components/ui/SectionHeading';
 import useCatalogCategories from '@/hooks/useCatalogCategories';
 import { listCategoryProducts, listProducts } from '@/services/catalog';
 import { getErrorMessage, isRequestAborted } from '@/services/api';
+import Seo from '@/seo/Seo';
+import { SHOP_META, categoryMeta } from '@/seo/seoCore.mjs';
 
 type SortOption = 'featured' | 'price-low' | 'price-high' | 'rating' | 'newest';
 
@@ -122,11 +124,20 @@ export default function Category() {
   }
 
   if (loadError) {
-    return <div role="alert" className="container-px mx-auto max-w-7xl py-20 text-center text-error-600">{loadError}</div>;
+    return (
+      <>
+        <Seo title="Products unavailable" description="This page could not be loaded." noindex />
+        <div role="alert" className="container-px mx-auto max-w-7xl py-20 text-center text-error-600">{loadError}</div>
+      </>
+    );
   }
+
+  const seoMeta = isAll || !categoryInfo ? SHOP_META : categoryMeta(categoryInfo);
+  const seoNoIndex = !isAll && products.length === 0;
 
   return (
     <div className="bg-white">
+      {(isAll || categoryInfo) && <Seo {...seoMeta} noindex={seoNoIndex} />}
       {/* breadcrumb */}
       <div className="border-b border-navy-100 bg-navy-50">
         <div className="container-px mx-auto max-w-7xl py-4">
