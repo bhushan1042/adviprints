@@ -83,3 +83,38 @@ test('MONGODB_DB_NAME overrides the URI path without dropping query parameters',
   assert.equal(config.mongodbUri, uri);
   assert.equal(describeMongoTarget(config.mongodbUri, config.mongodbDbName), 'mongodb+srv://cluster.example/adviprints');
 });
+
+test('Qikink defaults to Sandbox and does not require credentials while disabled', () => {
+  const config = loadConfig({
+    NODE_ENV: 'test',
+    MONGODB_URI: '',
+    QIKINK_CLIENT_ID: 'test-id',
+    QIKINK_CLIENT_SECRET: 'test-secret'
+  });
+  assert.equal(config.qikink.environment, 'sandbox');
+  assert.equal(config.qikink.baseUrl, 'https://sandbox.qikink.com');
+  assert.equal(config.qikink.liveEnabled, false);
+});
+
+test('Qikink rejects a base URL that does not match the selected environment', () => {
+  assert.throws(() => loadConfig({
+    NODE_ENV: 'test',
+    QIKINK_ENV: 'sandbox',
+    QIKINK_BASE_URL: 'https://api.qikink.com'
+  }), /QIKINK_BASE_URL must be https:\/\/sandbox\.qikink\.com/);
+});
+
+test('Qikink Live requires explicit enablement and backend credentials', () => {
+  const disabled = loadConfig({
+    NODE_ENV: 'test',
+    QIKINK_ENV: 'live',
+    QIKINK_CLIENT_ID: 'id',
+    QIKINK_CLIENT_SECRET: 'secret'
+  });
+  assert.equal(disabled.qikink.liveEnabled, false);
+  assert.throws(() => loadConfig({
+    NODE_ENV: 'test',
+    QIKINK_ENV: 'live',
+    QIKINK_LIVE_ENABLED: 'true'
+  }), /QIKINK_CLIENT_ID and QIKINK_CLIENT_SECRET/);
+});

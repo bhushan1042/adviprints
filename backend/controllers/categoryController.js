@@ -2,6 +2,7 @@ const Category = require('../models/Category');
 const Product = require('../models/Product');
 const { createSlug } = require('../utils/createSlug');
 const { findCategoryByIdentifier } = require('../utils/helpers');
+const { toPublicProduct } = require('../utils/publicProductView');
 
 // List all categories
 const listCategories = async (req, res) => {
@@ -36,14 +37,17 @@ const getCategoryProducts = async (req, res) => {
 
     const cid = category._id.toString();
     const products = await Product.find({
+      status: 'ENABLED',
       $or: [
         { category: category.name },
         { category: cid },
         { categoryId: cid }
       ]
-    }).sort({ createdAt: -1 });
+    })
+      .select('-qikinkVariants -qikinkSku -qikinkPrintTypeId -qikinkFulfillment -fulfillment -fulfilment')
+      .sort({ createdAt: -1 });
 
-    res.json(products);
+    res.json(products.map(toPublicProduct));
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server Error' });

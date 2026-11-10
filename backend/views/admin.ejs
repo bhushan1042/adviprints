@@ -556,14 +556,16 @@
     async function renderProductsList(){
       pageTitle.textContent = 'Products';
       content.innerHTML = '<div class="panel"><h3>Loading...</h3></div>';
-      // fetch categories and products
-      const [catsRes, prodRes] = await Promise.all([api('/categories', { auth:false }), api('/products', { auth:false })]);
+      // Admin needs to see every product, including products awaiting approval.
+      const [catsRes, prodRes] = await Promise.all([api('/categories', { auth:false }), api('/products/admin/all')]);
       const categories = catsRes.ok ? catsRes.body : [];
       if (!prodRes.ok) { content.innerHTML = '<div class="panel">Failed to load products</div>'; return; }
-      let products = prodRes.body;
+      if (!Array.isArray(prodRes.body)) { content.innerHTML = '<div class="panel">Product list response was invalid. Please refresh and try again.</div>'; return; }
+      const products = prodRes.body;
 
       function renderTableRows(list){
-        return list.map(p => `<tr><td>${escapeHtml(p.name)}</td><td class="muted">${escapeHtml(p.category||'')}</td><td>$${Number(p.price||0).toFixed(2)}</td><td>${p.stock||0}</td><td class="actions"><button data-id="${p._id}" class="btn" data-action="edit-prod">Edit</button><button data-id="${p._id}" class="btn danger" data-action="delete-prod">Delete</button></td></tr>`).join('');
+        if (!list.length) return '<tr><td colspan="5" class="muted">No products found.</td></tr>';
+        return list.map(p => `<tr><td>${escapeHtml(p.name)}</td><td class="muted">${escapeHtml(p.category||'')}</td><td>$${Number(p.price||0).toFixed(2)}</td><td>${escapeHtml(p.status||'PENDING')}</td><td class="actions"><button data-id="${p._id}" class="btn" data-action="edit-prod">Edit</button><button data-id="${p._id}" class="btn danger" data-action="delete-prod">Delete</button></td></tr>`).join('');
       }
 
       let html = '<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
@@ -573,7 +575,7 @@
           + '<button class="btn primary" id="addProdBtn">Add</button>'
         + '</div>'
       + '</div>';
-      html += '<table><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody id="products_tbody">';
+      html += '<table><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Approval</th><th>Actions</th></tr></thead><tbody id="products_tbody">';
       html += renderTableRows(products);
       html += '</tbody></table></div>';
       content.innerHTML = html;
@@ -595,196 +597,225 @@
       }
       attachRowHandlers();
 
-      // filter change: fetch products for a category or all
+      // Filter the full admin list; public category endpoints intentionally hide PENDING products.
       const filter = document.getElementById('filter_cat');
       filter.addEventListener('change', async (e)=>{
         const cid = e.target.value;
         content.querySelector('#products_tbody').innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
-        try {
-          let listRes;
-          if (!cid) listRes = await api('/products', { auth:false });
-          else listRes = await api('/categories/' + cid + '/products', { auth:false });
-          if (!listRes.ok) { content.querySelector('#products_tbody').innerHTML = '<tr><td colspan="5">Failed to load</td></tr>'; return; }
-          products = listRes.body;
-          content.querySelector('#products_tbody').innerHTML = renderTableRows(products);
-          attachRowHandlers();
-        } catch (err) { content.querySelector('#products_tbody').innerHTML = '<tr><td colspan="5">Error</td></tr>'; }
+        const category = categories.find((item) => String(item._id) === cid);
+        const filtered = !category ? products : products.filter((product) =>
+          String(product.category || '') === String(category.name) ||
+          String(product.category || '') === String(category._id) ||
+          String(product.categoryId || '') === String(category._id)
+        );
+        content.querySelector('#products_tbody').innerHTML = renderTableRows(filtered);
+        attachRowHandlers();
       });
     }
 
-    // Product Add/Edit
-    async function renderProductAdd(){
-      pageTitle.textContent = 'Add Product';
-      // fetch categories for select
-      const catsRes = await api('/categories', { auth:false });
-      const cats = catsRes.ok ? catsRes.body : [];
-      content.innerHTML = `
-        <div class="panel">
-          <h3>Add Product</h3>
-          <div class="form-row">
-            <div>
-              <label for="p_name">Name</label>
-              <input id="p_name" placeholder="e.g. Classic T-Shirt" />
-              <div class="small muted">Product display name shown to customers.</div>
-            </div>
-            <div>
-              <label for="p_cat">Category</label>
-              <select id="p_cat"><option value="">-- None --</option>${cats.map(c=>`<option value="${c._id}">${escapeHtml(c.name)}</option>`).join('')}</select>
-              <div class="small muted">Select an existing category or leave empty.</div>
-            </div>
+    // Product Add/Edit share one form: details, sizes/colours, and Qikink SKU mappings.
+    const PRINT_TYPE_OPTIONS = [1, 2, 3, 5, 6, 7, 12, 13, 14, 15, 17, 23];
+    const csvList = (value) => [...new Set(String(value || '').split(',').map((s) => s.trim()).filter(Boolean))];
+
+    function productFormHtml(p, cats){
+      return `
+        <div class="form-row">
+          <div>
+            <label for="p_name">Name</label>
+            <input id="p_name" value="${escapeHtml(p.name||'')}" placeholder="e.g. Unisex DryFit T-Shirt" />
           </div>
-          <div class="form-row" style="margin-top:8px">
-            <div>
-              <label for="p_price">Price</label>
-              <input id="p_price" type="number" step="0.01" placeholder="e.g. 19.99" />
-            </div>
-            <div>
-              <label for="p_stock">Stock</label>
-              <input id="p_stock" type="number" placeholder="e.g. 50" />
-            </div>
+          <div>
+            <label for="p_cat">Category</label>
+            <select id="p_cat"><option value="">-- None --</option>${cats.map(c=>`<option value="${c._id}" ${c.name===p.category?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}</select>
           </div>
-          <div style="margin-top:8px">
-            <label for="p_image_file">Image (optional)</label>
-            <input id="p_image_file" type="file" accept="image/*" />
-            <div class="small muted">Select an image (JPEG/PNG/WebP) — max 10MB. It will be uploaded to the server.</div>
-            <div style="margin-top:8px"><img id="p_image_preview" src="" alt="" style="max-width:160px; display:none; border-radius:6px; border:1px solid #eee"/></div>
-            <input type="hidden" id="p_imageUrl" />
-            <input type="hidden" id="p_imageFilename" />
-            <input type="hidden" id="p_imageMime" />
-            <input type="hidden" id="p_imageSize" />
+        </div>
+        <div class="form-row" style="margin-top:8px">
+          <div>
+            <label for="p_price">Selling price</label>
+            <input id="p_price" type="number" step="0.01" min="0" value="${p.price ?? ''}" placeholder="e.g. 400" />
           </div>
-          <div style="margin-top:12px"><button class="btn primary" id="saveProdBtn">Save</button> <button class="btn" id="cancelProdBtn">Cancel</button></div>
-          <div id="p_err" class="muted"></div>
+          <div></div>
+        </div>
+        <div style="margin-top:8px">
+          <label for="p_description">Description</label>
+          <textarea id="p_description" rows="3" placeholder="Shown on the product page">${escapeHtml(p.description||'')}</textarea>
+        </div>
+        <div class="form-row" style="margin-top:8px">
+          <div>
+            <label for="p_sizes">Sizes</label>
+            <input id="p_sizes" value="${escapeHtml((p.sizes||[]).join(', '))}" placeholder="e.g. XS, S, M, L, XL" />
+            <div class="small muted">Comma-separated.</div>
+          </div>
+          <div>
+            <label for="p_colours">Colours</label>
+            <input id="p_colours" value="${escapeHtml((p.colours||[]).join(', '))}" placeholder="e.g. White, Black" />
+            <div class="small muted">Comma-separated.</div>
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <label>Qikink SKU mapping</label>
+          <div class="small muted">Enter the Qikink SKU and print type ID for every colour and size. Incomplete rows block approval.</div>
+          <div id="p_variants" style="margin-top:6px"></div>
+        </div>
+        <div style="margin-top:8px">
+          <label for="p_image_file">Image</label>
+          <input id="p_image_file" type="file" accept="image/*" />
+          <div class="small muted">JPEG, PNG or WebP, max 10MB. Leave empty to keep the current image.</div>
+          <div style="margin-top:8px"><img id="p_image_preview" src="${escapeHtml(p.imageUrl||'')}" alt="" style="max-width:160px; ${p.imageUrl ? '' : 'display:none;'} border-radius:6px; border:1px solid #eee"/></div>
+          <input type="hidden" id="p_imageUrl" value="${escapeHtml(p.imageUrl||'')}" />
+          <input type="hidden" id="p_imageFilename" value="${escapeHtml(p.imageFilename||'')}" />
+          <input type="hidden" id="p_imageMime" value="${escapeHtml(p.imageMime||'')}" />
+          <input type="hidden" id="p_imageSize" value="${escapeHtml(p.imageSize||'')}" />
         </div>`;
-      document.getElementById('cancelProdBtn').addEventListener('click', ()=> navigate('/admin/products-list'));
-      // image upload handler
-      let uploadedImage = null;
+    }
+
+    // One SKU row per colour/size combination. Typed values survive when sizes or colours change.
+    function mountVariantTable(initialVariants){
+      const container = document.getElementById('p_variants');
+      const draft = new Map((initialVariants||[]).map((v) => [`${String(v.size).toLowerCase()}|${String(v.colour).toLowerCase()}`, { sku: v.sku || '', printTypeId: String(v.printTypeId ?? '') }]));
+      const snapshot = () => {
+        container.querySelectorAll('tr[data-key]').forEach((row) => {
+          draft.set(row.dataset.key, { sku: row.querySelector('.v_sku').value.trim(), printTypeId: row.querySelector('.v_pt').value });
+        });
+      };
+      const render = () => {
+        snapshot();
+        const sizes = csvList(document.getElementById('p_sizes').value);
+        const colours = csvList(document.getElementById('p_colours').value);
+        if (!sizes.length || !colours.length) {
+          container.innerHTML = '<div class="small muted">Add sizes and colours to create SKU rows.</div>';
+          return;
+        }
+        const rows = [];
+        colours.forEach((colour) => sizes.forEach((size) => {
+          const key = `${size.toLowerCase()}|${colour.toLowerCase()}`;
+          const d = draft.get(key) || { sku: '', printTypeId: '' };
+          rows.push(`<tr data-key="${escapeHtml(key)}" data-size="${escapeHtml(size)}" data-colour="${escapeHtml(colour)}">
+            <td>${escapeHtml(colour)}</td><td>${escapeHtml(size)}</td>
+            <td><input class="v_sku" maxlength="50" value="${escapeHtml(d.sku)}" placeholder="Qikink SKU" /></td>
+            <td><select class="v_pt"><option value="">Select</option>${PRINT_TYPE_OPTIONS.map((id) => `<option value="${id}" ${d.printTypeId === String(id) ? 'selected' : ''}>${id}</option>`).join('')}</select></td>
+          </tr>`);
+        }));
+        container.innerHTML = `<table><thead><tr><th>Colour</th><th>Size</th><th>Qikink SKU</th><th>Print type ID</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+      };
+      document.getElementById('p_sizes').addEventListener('input', render);
+      document.getElementById('p_colours').addEventListener('input', render);
+      render();
+      return () => [...container.querySelectorAll('tr[data-key]')]
+        .map((row) => ({ size: row.dataset.size, colour: row.dataset.colour, sku: row.querySelector('.v_sku').value.trim(), printTypeId: row.querySelector('.v_pt').value }))
+        .filter((v) => v.sku && v.printTypeId)
+        .map((v) => ({ ...v, printTypeId: Number(v.printTypeId) }));
+    }
+
+    function readProductForm(){
+      return {
+        name: document.getElementById('p_name').value.trim(),
+        category: document.getElementById('p_cat').value || null,
+        price: parseFloat(document.getElementById('p_price').value),
+        description: document.getElementById('p_description').value.trim(),
+        sizes: csvList(document.getElementById('p_sizes').value),
+        colours: csvList(document.getElementById('p_colours').value),
+        imageUrl: document.getElementById('p_imageUrl').value || null,
+        imageFilename: document.getElementById('p_imageFilename').value || null,
+        imageMime: document.getElementById('p_imageMime').value || null,
+        imageSize: document.getElementById('p_imageSize').value || null
+      };
+    }
+
+    function bindProductImageUpload(){
       const fileInput = document.getElementById('p_image_file');
       const preview = document.getElementById('p_image_preview');
       fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        // preview
         const reader = new FileReader();
         reader.onload = () => { preview.src = reader.result; preview.style.display = 'block'; };
         reader.readAsDataURL(file);
-        // upload
         try {
           const fd = new FormData(); fd.append('image', file); fd.append('folder', 'products');
           const token = localStorage.getItem(tokenKey);
           const res = await fetch('/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
           const data = await res.json();
           if (!res.ok) { document.getElementById('p_err').textContent = (data && data.error) || 'Upload failed'; return; }
-          uploadedImage = data;
           document.getElementById('p_imageUrl').value = data.url;
           document.getElementById('p_imageFilename').value = data.filename;
           document.getElementById('p_imageMime').value = data.mimetype;
           document.getElementById('p_imageSize').value = data.size;
         } catch (err) { console.error(err); document.getElementById('p_err').textContent = 'Upload failed'; }
       });
+    }
 
+    async function renderProductAdd(){
+      pageTitle.textContent = 'Add Product';
+      const catsRes = await api('/categories', { auth:false });
+      const cats = catsRes.ok ? catsRes.body : [];
+      content.innerHTML = `
+        <div class="panel">
+          <h3>Add Product</h3>
+          ${productFormHtml({}, cats)}
+          <div style="margin-top:12px"><button class="btn primary" id="saveProdBtn">Save</button> <button class="btn" id="cancelProdBtn">Cancel</button></div>
+          <div id="p_err" class="muted"></div>
+        </div>`;
+      document.getElementById('cancelProdBtn').addEventListener('click', ()=> navigate('/admin/products-list'));
+      const collectVariants = mountVariantTable([]);
+      bindProductImageUpload();
       document.getElementById('saveProdBtn').addEventListener('click', async ()=>{
-        const name = document.getElementById('p_name').value.trim();
-        const category = document.getElementById('p_cat').value || null;
-        const price = parseFloat(document.getElementById('p_price').value);
-        const stock = parseInt(document.getElementById('p_stock').value,10)||0;
-        const imageUrl = document.getElementById('p_imageUrl').value || null;
-        const imageFilename = document.getElementById('p_imageFilename').value || null;
-        const imageMime = document.getElementById('p_imageMime').value || null;
-        const imageSize = document.getElementById('p_imageSize').value || null;
-        if (!name || Number.isNaN(price)) return document.getElementById('p_err').textContent = 'Name and price required';
-        const body = { name, price, stock, imageUrl, imageFilename, imageMime, imageSize };
-        if (category) body.category = category;
+        const form = readProductForm();
+        if (!form.name || !Number.isFinite(form.price)) return document.getElementById('p_err').textContent = 'Name and a valid price are required';
+        const body = { ...form, qikinkVariants: collectVariants() };
+        if (!body.category) delete body.category;
         const res = await api('/products', { method:'POST', body: JSON.stringify(body) });
         if (!res.ok) return document.getElementById('p_err').textContent = (res.body && res.body.error) || 'Failed';
-        alert('Product added'); navigate('/admin/products-list');
+        alert('Product saved as PENDING. Open it from the list and click Approve / Enable when it is complete.');
+        navigate('/admin/products-list');
       });
     }
 
     async function renderProductEdit(id){
       pageTitle.textContent = 'Edit Product';
       content.innerHTML = '<div class="panel"><h3>Loading...</h3></div>';
-      const [prodRes, catsRes] = await Promise.all([api('/products/' + id), api('/categories', { auth:false })]);
-      if (!prodRes.ok) { content.innerHTML = '<div class="panel">Product not found</div>'; return; }
-      const p = prodRes.body; const cats = catsRes.ok ? catsRes.body : [];
+      const [prodRes, catsRes] = await Promise.all([api('/products/admin/all'), api('/categories', { auth:false })]);
+      if (!prodRes.ok || !Array.isArray(prodRes.body)) { content.innerHTML = '<div class="panel">Unable to load products for editing</div>'; return; }
+      const p = prodRes.body.find((product) => String(product._id) === String(id));
+      if (!p) { content.innerHTML = '<div class="panel">Product not found</div>'; return; }
+      const cats = catsRes.ok ? catsRes.body : [];
+      const approvalProblems = Array.isArray(p.approvalProblems) ? p.approvalProblems : [];
+      const statusValue = p.status || 'PENDING';
       content.innerHTML = `
         <div class="panel">
           <h3>Edit Product</h3>
-          <div class="form-row">
-            <div>
-              <label for="p_name">Name</label>
-              <input id="p_name" value="${escapeHtml(p.name)}" placeholder="e.g. Classic T-Shirt" />
-              <div class="small muted">Product display name shown to customers.</div>
-            </div>
-            <div>
-              <label for="p_cat">Category</label>
-              <select id="p_cat"><option value="">-- None --</option>${cats.map(c=>`<option value="${c._id}" ${c.name===p.category?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}</select>
-              <div class="small muted">Select an existing category or leave empty.</div>
+          <div class="panel" style="margin-bottom:12px">
+            <div><strong>Status:</strong> <span id="p_status">${escapeHtml(statusValue)}</span></div>
+            <div class="small muted">Saving any change returns the product to PENDING. It stays hidden from customers until you approve it again.</div>
+            ${approvalProblems.length ? `<div style="margin-top:8px"><strong>Cannot enable yet:</strong><ul>${approvalProblems.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : '<div class="small" style="margin-top:8px">No approval blockers.</div>'}
+            <div style="margin-top:8px">
+              <button class="btn primary" id="enableProdBtn" ${statusValue === 'ENABLED' ? 'disabled' : ''}>Approve / Enable</button>
+              <button class="btn danger" id="disableProdBtn" ${statusValue === 'DISABLED' ? 'disabled' : ''}>Disable</button>
             </div>
           </div>
-          <div class="form-row" style="margin-top:8px">
-            <div>
-              <label for="p_price">Price</label>
-              <input id="p_price" type="number" step="0.01" value="${p.price||0}" placeholder="e.g. 19.99" />
-            </div>
-            <div>
-              <label for="p_stock">Stock</label>
-              <input id="p_stock" type="number" value="${p.stock||0}" placeholder="e.g. 50" />
-            </div>
-          </div>
-          <div style="margin-top:8px">
-            <label for="p_image_file">Image (optional)</label>
-            <input id="p_image_file" type="file" accept="image/*" />
-            <div class="small muted">Select an image (JPEG/PNG/WebP) — max 10MB. If you don't choose a new file, existing image will be kept.</div>
-            <div style="margin-top:8px"><img id="p_image_preview" src="${escapeHtml(p.imageUrl||p.image||'')}" alt="" style="max-width:160px; ${p.imageUrl||p.image? '' : 'display:none;'} border-radius:6px; border:1px solid #eee"/></div>
-            <input type="hidden" id="p_imageUrl" value="${escapeHtml(p.imageUrl||p.image||'')}" />
-            <input type="hidden" id="p_imageFilename" value="${escapeHtml(p.imageFilename||'')}" />
-            <input type="hidden" id="p_imageMime" value="${escapeHtml(p.imageMime||'')}" />
-            <input type="hidden" id="p_imageSize" value="${escapeHtml(p.imageSize||'')}" />
-          </div>
+          ${productFormHtml(p, cats)}
           <div style="margin-top:12px"><button class="btn primary" id="saveProdBtn">Save</button> <button class="btn" id="cancelProdBtn">Cancel</button></div>
           <div id="p_err" class="muted"></div>
         </div>`;
       document.getElementById('cancelProdBtn').addEventListener('click', ()=> navigate('/admin/products-list'));
-      // image upload handler (edit)
-      let uploadedImage = null;
-      const fileInput = document.getElementById('p_image_file');
-      const preview = document.getElementById('p_image_preview');
-      fileInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => { preview.src = reader.result; preview.style.display = 'block'; };
-        reader.readAsDataURL(file);
-        try {
-          const fd = new FormData(); fd.append('image', file); fd.append('folder', 'products');
-          const token = localStorage.getItem(tokenKey);
-          const res = await fetch('/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
-          const data = await res.json();
-          if (!res.ok) { document.getElementById('p_err').textContent = (data && data.error) || 'Upload failed'; return; }
-          uploadedImage = data;
-          document.getElementById('p_imageUrl').value = data.url;
-          document.getElementById('p_imageFilename').value = data.filename;
-          document.getElementById('p_imageMime').value = data.mimetype;
-          document.getElementById('p_imageSize').value = data.size;
-        } catch (err) { console.error(err); document.getElementById('p_err').textContent = 'Upload failed'; }
-      });
-
+      async function changeStatus(status){
+        const r = await api('/products/' + id + '/status', { method:'PATCH', body: JSON.stringify({ status }) });
+        if (!r.ok) { alert((r.body && r.body.error) || 'Status update failed'); return; }
+        alert(status === 'ENABLED' ? 'Product approved and visible to customers' : 'Product disabled');
+        navigate('/admin/products-list');
+      }
+      document.getElementById('enableProdBtn').addEventListener('click', ()=> changeStatus('ENABLED'));
+      document.getElementById('disableProdBtn').addEventListener('click', ()=> changeStatus('DISABLED'));
+      const collectVariants = mountVariantTable(p.qikinkVariants);
+      bindProductImageUpload();
       document.getElementById('saveProdBtn').addEventListener('click', async ()=>{
-        const name = document.getElementById('p_name').value.trim();
-        const category = document.getElementById('p_cat').value || null;
-        const price = parseFloat(document.getElementById('p_price').value);
-        const stock = parseInt(document.getElementById('p_stock').value,10)||0;
-        const imageUrl = document.getElementById('p_imageUrl').value || null;
-        const imageFilename = document.getElementById('p_imageFilename').value || null;
-        const imageMime = document.getElementById('p_imageMime').value || null;
-        const imageSize = document.getElementById('p_imageSize').value || null;
-        if (!name || Number.isNaN(price)) return document.getElementById('p_err').textContent = 'Name and price required';
-        const body = { name, price, stock, imageUrl, imageFilename, imageMime, imageSize };
-        if (category) body.category = category;
+        const form = readProductForm();
+        if (!form.name || !Number.isFinite(form.price)) return document.getElementById('p_err').textContent = 'Name and a valid price are required';
+        const body = { ...form, qikinkVariants: collectVariants() };
+        if (!body.category) delete body.category;
         const r = await api('/products/' + id, { method:'PUT', body: JSON.stringify(body) });
         if (!r.ok) return document.getElementById('p_err').textContent = (r.body && r.body.error) || 'Failed';
-        alert('Product updated'); navigate('/admin/products-list');
+        alert('Product updated. It is now PENDING until approved again.'); navigate('/admin/products-list');
       });
     }
 

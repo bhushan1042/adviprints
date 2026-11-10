@@ -9,7 +9,7 @@ const LOCAL_PRIVATE_PREFIX = 'local-private:'; // development-only private file
 const PUBLIC_UPLOAD_PREFIX = '/uploads/';
 
 const PUBLIC_FOLDERS = ['products', 'categories', 'banners', 'branding', 'misc'];
-const PRIVATE_FOLDERS = ['orders/original', 'orders/preview', 'orders/uploaded'];
+const PRIVATE_FOLDERS = ['orders/original', 'orders/preview', 'orders/uploaded', 'orders/artwork'];
 
 let state = { driver: null, folder: 'adviprints', uploadsDir: null, privateDir: null };
 

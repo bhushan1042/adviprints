@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '../../../services/api';
 import styles from './CheckoutPage.module.css';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [cartItems, setCartItems] = useState([]);
   const [checkoutError, setCheckoutError] = useState('');
   const [step, setStep] = useState('address'); // address, payment, review
@@ -22,35 +21,37 @@ const CheckoutPage = () => {
     landmark: ''
   });
 
-  const paymentMethod = 'cod';
+  const [checkoutId, setCheckoutId] = useState('');
+
+  const createCheckoutId = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    }
+    throw new Error('Secure checkout is unavailable in this browser. Please use a supported browser.');
+  };
 
   useEffect(() => {
-    // Get design data from location state (passed from PreviewPage)
-    const stateData = location.state?.designData;
-    const stateProduct = location.state?.product;
-    const orderDetails = location.state?.orderDetails;
-
-    if (
-      stateData?.originalImage &&
-      stateProduct?.id &&
-      Number.isInteger(orderDetails?.quantity) &&
-      orderDetails.quantity > 0
-    ) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('adviprintsCart') || '[]');
+      setCartItems(Array.isArray(saved) ? saved : []);
+      if (!Array.isArray(saved) || !saved.length) {
+        setCheckoutError('Your cart is empty. Add a product before checkout.');
+        return;
+      }
+      let id = sessionStorage.getItem('adviprintsCheckoutId');
+      if (!id) {
+        id = createCheckoutId();
+        sessionStorage.setItem('adviprintsCheckoutId', id);
+      }
+      setCheckoutId(id);
       setCheckoutError('');
-      setCartItems([{
-        product: stateProduct,
-        productName: stateProduct.name,
-        designData: stateData,
-        quantity: orderDetails.quantity,
-        size: orderDetails.size || null,
-        colour: orderDetails.colour || null,
-        price: Number(stateProduct.price)
-      }]);
-    } else {
+    } catch (error) {
       setCartItems([]);
-      setCheckoutError('Checkout needs a selected product, quantity, and completed design. Return to a product page to start again.');
+      setCheckoutError(error instanceof Error ? error.message : 'Unable to load your cart. Please return to the cart and try again.');
     }
-  }, [location.state]);
+  }, []);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -81,48 +82,34 @@ const CheckoutPage = () => {
       setIsProcessing(true);
 
       try {
-        let lastOrderId = null;
-
-        for (const item of cartItems) {
-          const orderPayload = {
-            customerName: formData.fullName,
-            customerEmail: formData.email,
-            customerPhone: formData.phone,
-            address: {
-              street: formData.address,
-              city: formData.city,
-              state: formData.state,
-              zipCode: formData.pincode,
-              country: 'India'
-            },
-            productId: item.product?._id || item.product?.id,
-            productName: item.productName,
-            productPrice: item.price,
-            productCode: item.product?.productCode || null,
+        const orderPayload = {
+          checkoutId,
+          customerName: formData.fullName,
+          customerEmail: formData.email,
+          customerPhone: formData.phone,
+          address: {
+            street: formData.address,
+            city: formData.city,
+            state: formData.state,
+            zipCode: formData.pincode,
+            country: 'India'
+          },
+          items: cartItems.map((item) => ({
+            productId: item.productId,
             size: item.size,
             colour: item.colour,
-            designTemplate: item.designData?.template || 'centered',
-            originalImage: item.designData?.originalImage || '',
-            previewImage: item.designData?.previewImage || '',
-            uploadedImage: item.designData?.uploadedImage || '',
-            position: item.designData?.position || {},
-            quantity: item.quantity,
-            totalPrice: (item.price * item.quantity).toFixed(2),
-            paymentMethod
-          };
-
-          const { data } = await api.post('/api/orders', orderPayload);
-          lastOrderId = data?.orderId || null;
-        }
-
-        localStorage.removeItem('customCart');
-        localStorage.removeItem('checkoutItems');
-        localStorage.removeItem('cartItems');
+            quantity: Number(item.quantity)
+          })),
+          paymentMethod: 'cod'
+        };
+        const { data } = await api.post('/api/orders', orderPayload);
+        const lastOrderId = data?.orderId || null;
 
         if (lastOrderId) {
+          localStorage.removeItem('adviprintsCart');
           navigate(`/order-success/${lastOrderId}`);
         } else {
-          navigate('/');
+          throw new Error('Order confirmation was not returned by the server.');
         }
       } catch (error) {
         alert(`Error saving order: ${getErrorMessage(error, 'Failed to save order.')}`);
@@ -353,7 +340,7 @@ const CheckoutPage = () => {
               {step === 'address' && (
                 <button
                   className={styles.backBtn}
-                  onClick={() => navigate(`/product/${cartItems[0]?.product?.id || ''}`)}
+                  onClick={() => navigate('/cart')}
                 >
                   ← Back
                 </button>

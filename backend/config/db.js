@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { describeMongoTarget } = require('./env');
+const Order = require('../models/Order');
 
 const POOL_OPTIONS = {
   maxPoolSize: 10,
@@ -35,6 +36,17 @@ const connectDatabase = async (config) => {
 
   console.info(`[db] Connecting to ${describeMongoTarget(config.mongodbUri, config.mongodbDbName)}`);
   await mongoose.connect(config.mongodbUri, options);
+  await Order.init();
+  const indexes = await Order.collection.indexes();
+  const checkoutIdIndexExists = indexes.some((index) =>
+    index.key?.checkoutId === 1 && index.unique === true && index.sparse === true
+  );
+  const qikinkReferenceIndexExists = indexes.some((index) =>
+    index.key?.['qikinkFulfillment.reference'] === 1 && index.unique === true && index.sparse === true
+  );
+  if (!checkoutIdIndexExists || !qikinkReferenceIndexExists) {
+    throw new Error('A required unique sparse checkoutId or Qikink reference index is missing from the orders collection.');
+  }
   console.info(`[db] Connected (database: ${mongoose.connection.name})`);
   return mongoose.connection;
 };

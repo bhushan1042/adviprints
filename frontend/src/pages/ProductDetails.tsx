@@ -1,8 +1,8 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   Home as HomeIcon, Star, Share2,
-  Truck, Shield, RotateCcw, Check, Minus, Plus, Palette, Ruler,
+  Truck, Shield, RotateCcw, Check, Minus, Plus, Ruler,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import StarRating from '@/components/ui/StarRating';
@@ -17,12 +17,9 @@ import useCatalogCategories from '@/hooks/useCatalogCategories';
 import { applyImageFallback } from '@/utils/images';
 import categoryPlaceholder from '@/assets/placeholders/category-placeholder.png';
 
-const TemplateSelector = lazy(() => import('../features/design/components/TemplateSelector'));
-const DesignEditor = lazy(() => import('../features/design/components/DesignEditor'));
-const PreviewPage = lazy(() => import('../features/design/components/PreviewPage'));
-
 export default function ProductDetails() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { categories } = useCatalogCategories();
   const [product, setProduct] = useState<Awaited<ReturnType<typeof getProduct>> | null>(null);
   const [related, setRelated] = useState<Awaited<ReturnType<typeof listCategoryProducts>>>([]);
@@ -35,13 +32,8 @@ export default function ProductDetails() {
   const [selectedColor, setSelectedColor] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [sizeError, setSizeError] = useState(false);
+  const [selectionError, setSelectionError] = useState('');
   const [shareStatus, setShareStatus] = useState('');
-
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [designStep, setDesignStep] = useState<'editor' | 'preview' | null>(null);
-  const [designData, setDesignData] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -123,17 +115,41 @@ export default function ProductDetails() {
 
   const selectedColour = product?.colors[selectedColor]?.name || '';
 
-  const startCustomization = () => {
+  const addToCart = () => {
     if (product?.sizes.length && !selectedSize) {
-      setSizeError(true);
+      setSelectionError('Please select a size to continue.');
       return;
     }
     if (product?.colors.length && !selectedColour) {
-      setSizeError(true);
+      setSelectionError('Please select a colour to continue.');
       return;
     }
-    setSizeError(false);
-    setShowTemplateSelector(true);
+    const colour = product.colors[selectedColor]?.name || '';
+    try {
+      const current = JSON.parse(localStorage.getItem('adviprintsCart') || '[]');
+      if (!Array.isArray(current)) throw new Error('Invalid cart data');
+      const cart = current;
+      const item = {
+        productId: product.id,
+        productName: product.name,
+        productImageUrl: product.images[0],
+        price: product.price,
+        size: selectedSize || '',
+        colour,
+        quantity
+      };
+      const existing = cart.find((entry: typeof item) =>
+        entry.productId === item.productId && entry.size === item.size && entry.colour === item.colour
+      );
+      if (existing) existing.quantity = Math.min(100, Number(existing.quantity || 0) + quantity);
+      else cart.push(item);
+      localStorage.setItem('adviprintsCart', JSON.stringify(cart));
+      sessionStorage.removeItem('adviprintsCheckoutId');
+      setSelectionError('');
+      navigate('/cart');
+    } catch (error) {
+      setSelectionError('Unable to add this product to your cart. Please try again.');
+    }
   };
 
   const shareProduct = async () => {
@@ -217,17 +233,6 @@ export default function ProductDetails() {
                   <img src={img} alt={` - view ${i + 1}`} className="aspect-square w-full object-cover" onError={(event) => applyImageFallback(event, categoryPlaceholder)} />
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={startCustomization}
-                className="flex aspect-square items-center justify-center rounded-xl border-2 border-dashed border-navy-200 text-center transition-colors hover:border-orange-400"
-                aria-label="Customize this product"
-              >
-                <div className="px-2">
-                  <Palette size={20} className="mx-auto text-orange-500" />
-                  <p className="mt-1 text-[10px] font-semibold text-navy-500">Add Design</p>
-                </div>
-              </button>
             </div>
           </div>
 
@@ -290,7 +295,7 @@ export default function ProductDetails() {
                   {product.colors.map((c, i) => (
                     <button
                       key={c.name}
-                      onClick={() => { setSelectedColor(i); setSizeError(false); }}
+                      onClick={() => { setSelectedColor(i); setSelectionError(''); }}
                       title={c.name}
                       className={`relative h-10 w-10 rounded-full border-2 transition-all ${
                         selectedColor === i ? 'border-orange-500 ring-2 ring-orange-200' : 'border-navy-200 hover:border-navy-400'
@@ -321,7 +326,7 @@ export default function ProductDetails() {
                 {product.sizes.map((s) => (
                   <button
                     key={s}
-                    onClick={() => { setSelectedSize(s); setSizeError(false); }}
+                    onClick={() => { setSelectedSize(s); setSelectionError(''); }}
                     className={`min-w-[3rem] rounded-xl border-2 px-4 py-2.5 font-display text-sm font-bold transition-all ${
                       selectedSize === s
                         ? 'border-orange-500 bg-orange-500 text-white'
@@ -335,13 +340,7 @@ export default function ProductDetails() {
               ) : (
                 <p className="text-sm text-navy-500">No sizes are configured; you can continue without selecting one.</p>
               )}
-              {sizeError && (product.sizes.length > 0 || product.colors.length > 0) && (
-                <p className="mt-2 text-sm font-medium text-error-600">
-                  {!selectedColour && product.colors.length > 0
-                    ? 'Please select a colour to continue.'
-                    : 'Please select a size to continue.'}
-                </p>
-              )}
+              {selectionError ? <p role="alert" className="mt-2 text-sm font-medium text-error-600">{selectionError}</p> : null}
             </div>
 
             {/* quantity + actions */}
@@ -356,15 +355,14 @@ export default function ProductDetails() {
                   </button>
                   <span className="w-12 text-center font-display font-bold text-navy-900">{quantity}</span>
                   <button
-                    onClick={() => setQuantity((q) => Math.min(1000, q + 1))}
+                    onClick={() => setQuantity((q) => Math.min(100, q + 1))}
                     className="flex h-11 w-11 items-center justify-center text-navy-600 transition-colors hover:text-orange-600"
                   >
                     <Plus size={16} />
                   </button>
                 </div>
-                <Button onClick={startCustomization} size="lg" fullWidth>
-                  <Palette size={20} />
-                  Customize — Rs {product.price * quantity}
+                <Button onClick={addToCart} size="lg" fullWidth>
+                  Add to cart — Rs {product.price * quantity}
                 </Button>
               </div>
 
@@ -432,56 +430,6 @@ export default function ProductDetails() {
           </div>
         </section>
       )}
-      <Suspense fallback={<div className="fixed inset-0 z-[60] grid place-items-center bg-white/80 text-navy-700">Loading customization studio…</div>}>
-        {showTemplateSelector && (
-          <TemplateSelector
-            product={product}
-            selectedTemplate={selectedTemplate}
-            onSelectTemplate={setSelectedTemplate}
-            onConfirm={() => {
-              setShowTemplateSelector(false);
-              setDesignStep('editor');
-            }}
-            onCancel={() => {
-              setShowTemplateSelector(false);
-              setSelectedTemplate(null);
-            }}
-          />
-        )}
-        {designStep === 'editor' && selectedTemplate && (
-          <DesignEditor
-            selectedTemplate={selectedTemplate}
-            product={product}
-            selectedColour={product.colors[selectedColor]?.hex || selectedColour || '#f5f6f7'}
-            selectedSize={selectedSize}
-            initialDesign={designData}
-            onSave={(data) => {
-              setDesignData(data);
-              setDesignStep('preview');
-            }}
-            onCancel={() => {
-              setDesignStep(null);
-              setSelectedTemplate(null);
-              setDesignData(null);
-            }}
-          />
-        )}
-        {designStep === 'preview' && designData && (
-          <PreviewPage
-            product={product}
-            designData={designData}
-            selectedSize={selectedSize}
-            selectedColour={selectedColour}
-            quantity={quantity}
-            onEdit={() => setDesignStep('editor')}
-            onClose={() => {
-              setDesignStep(null);
-              setSelectedTemplate(null);
-              setDesignData(null);
-            }}
-          />
-        )}
-      </Suspense>
     </div>
   );
 }

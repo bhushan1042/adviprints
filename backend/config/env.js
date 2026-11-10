@@ -79,6 +79,34 @@ const loadConfig = (env = process.env) => {
   };
   const hasCloudinary = Boolean(cloudinary.url || (cloudinary.cloudName && cloudinary.apiKey && cloudinary.apiSecret));
 
+  const qikinkEnv = (env.QIKINK_ENV || 'sandbox').trim().toLowerCase();
+  const qikinkLiveEnabled = env.QIKINK_LIVE_ENABLED === 'true';
+  const qikinkBaseUrls = {
+    sandbox: 'https://sandbox.qikink.com',
+    live: 'https://api.qikink.com'
+  };
+  const requestedQikinkBaseUrl = (env.QIKINK_BASE_URL || qikinkBaseUrls[qikinkEnv] || '').trim().replace(/\/+$/, '');
+  if (qikinkBaseUrls[qikinkEnv] && requestedQikinkBaseUrl !== qikinkBaseUrls[qikinkEnv]) {
+    errors.push(`QIKINK_BASE_URL must be ${qikinkBaseUrls[qikinkEnv]} for QIKINK_ENV=${qikinkEnv}`);
+  }
+  const qikink = {
+    environment: qikinkEnv,
+    baseUrl: requestedQikinkBaseUrl,
+    clientId: (env.QIKINK_CLIENT_ID || '').trim(),
+    clientSecret: (env.QIKINK_CLIENT_SECRET || '').trim(),
+    liveEnabled: qikinkLiveEnabled
+  };
+  if (!['sandbox', 'live'].includes(qikinkEnv)) errors.push('QIKINK_ENV must be "sandbox" or "live"');
+  if (qikinkEnv === 'live' && !qikinkLiveEnabled) {
+    warnings.push('Qikink Live is selected but order submission is disabled until QIKINK_LIVE_ENABLED=true');
+  }
+  if (qikinkLiveEnabled && qikinkEnv !== 'live') {
+    errors.push('QIKINK_LIVE_ENABLED=true requires QIKINK_ENV=live');
+  }
+  if (qikinkLiveEnabled && (!qikink.clientId || !qikink.clientSecret)) {
+    errors.push('QIKINK_CLIENT_ID and QIKINK_CLIENT_SECRET are required when Qikink Live submission is enabled');
+  }
+
   const requestedDriver = (env.STORAGE_DRIVER || '').trim().toLowerCase();
   const storageDriver = requestedDriver || (hasCloudinary || isProduction ? 'cloudinary' : 'local');
   if (!['cloudinary', 'local'].includes(storageDriver)) {
@@ -106,6 +134,7 @@ const loadConfig = (env = process.env) => {
     adminEmails: list(env.ADMIN_EMAILS).map((e) => e.toLowerCase()),
     storageDriver,
     cloudinary,
+    qikink,
     // Legacy uploads written by older versions and local-driver files in development.
     uploadsDir: path.resolve(env.UPLOADS_DIR || path.join(__dirname, '..', 'public', 'uploads')),
     warnings

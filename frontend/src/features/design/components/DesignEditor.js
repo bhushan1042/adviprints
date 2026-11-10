@@ -291,8 +291,12 @@ const ArtworkElement = ({ element, area, stageRef, isSelected, onSelect, onNode,
   const nodeRef = useRef(null);
   const registerNode = useCallback((node) => {
     nodeRef.current = node;
+    if (node) {
+      node.setAttr('designZoneId', element.zoneId);
+      node.setAttr('photoPlaceholder', Boolean(element.photoPlaceholder));
+    }
     onNode(element.id, node);
-  }, [element.id, onNode]);
+  }, [element.id, element.zoneId, onNode]);
   const handleSelect = (event) => {
     event.cancelBubble = true;
     if (element.photoPlaceholder) {
@@ -305,6 +309,7 @@ const ArtworkElement = ({ element, area, stageRef, isSelected, onSelect, onNode,
   return (
     <Group
       ref={registerNode}
+      name="design-element"
       x={element.x}
       y={element.y}
       width={element.width}
@@ -398,6 +403,8 @@ const DesignEditor = ({
   quantity = 1
 }) => {
   const stageRef = useRef(null);
+  const garmentRef = useRef(null);
+  const safeAreaRef = useRef(null);
   const transformerRef = useRef(null);
   const nodeRefs = useRef({});
   const uploadRef = useRef(null);
@@ -757,20 +764,71 @@ const DesignEditor = ({
       side === originalView || history.present[side]?.length
     ));
     const sidePreviews = {};
-    for (const side of sides) {
-      if (side !== renderedView) {
-        setView(side);
-        renderedView = side;
+    const artworkExports = [];
+    try {
+      for (const side of sides) {
+        if (side !== renderedView) {
+          setView(side);
+          renderedView = side;
+          await nextPaint();
+        }
+        const stage = stageRef.current;
+        if (!stage) throw new Error('The design canvas is unavailable.');
+        sidePreviews[side] = stage.toDataURL({ pixelRatio: 2, mimeType: 'image/png' });
+
+        const nodes = stage.find('.design-element');
+        const visibility = nodes.map((node) => node.isVisible());
+        const garment = garmentRef.current;
+        const safeArea = safeAreaRef.current;
+        const transformer = transformerRef.current;
+        const garmentVisible = garment?.isVisible();
+        const safeAreaVisible = safeArea?.isVisible();
+        const transformerVisible = transformer?.isVisible();
+        try {
+          garment?.visible(false);
+          safeArea?.visible(false);
+          transformer?.visible(false);
+          zonesBySide[side].forEach((zone) => {
+            const matchingElements = (history.present[side] || []).filter((element) => (
+              element.zoneId === zone.id && !element.photoPlaceholder
+            ));
+            if (!matchingElements.length) return;
+            nodes.forEach((node) => {
+              node.visible(node.getAttr('designZoneId') === zone.id && !node.getAttr('photoPlaceholder'));
+              if (!node.getAttr('designZoneId')) node.visible(false);
+            });
+            stage.draw();
+            artworkExports.push({
+              side,
+              zoneId: zone.id,
+              zoneName: zone.name,
+              image: stage.toDataURL({
+                x: zone.x,
+                y: zone.y,
+                width: zone.width,
+                height: zone.height,
+                pixelRatio: 2,
+                mimeType: 'image/png'
+              }),
+              pixelWidth: Math.round(zone.width * 2),
+              pixelHeight: Math.round(zone.height * 2)
+            });
+          });
+        } finally {
+          nodes.forEach((node, index) => node.visible(visibility[index]));
+          garment?.visible(garmentVisible);
+          safeArea?.visible(safeAreaVisible);
+          transformer?.visible(transformerVisible);
+          stage.draw();
+        }
+      }
+    } finally {
+      if (originalView !== renderedView) {
+        setView(originalView);
         await nextPaint();
       }
-      if (!stageRef.current) throw new Error('The design canvas is unavailable.');
-      sidePreviews[side] = stageRef.current.toDataURL({ pixelRatio: 2, mimeType: 'image/png' });
+      setShowSafeArea(true);
     }
-    if (originalView !== renderedView) {
-      setView(originalView);
-      await nextPaint();
-    }
-    setShowSafeArea(true);
 
     const proofCanvas = document.createElement('canvas');
     const sideImages = await Promise.all(Object.entries(sidePreviews).map(([side, src]) => new Promise((resolve, reject) => {
@@ -812,6 +870,7 @@ const DesignEditor = ({
       originalImage,
       previewImage: originalImage,
       uploadedImage,
+      artworkExports,
       position,
       printArea: zoneFor(originalView, activeZonesBySide[originalView] || defaultZoneBySide[originalView]),
       placementsBySide: {
@@ -1144,9 +1203,11 @@ const DesignEditor = ({
                 onTouchStart={handleBlankCanvasClick}
               >
                 <Layer>
-                  <ShirtArtwork colour={garmentColor} side={view} product={product} />
+                  <Group ref={garmentRef} name="garment-mockup" listening={false}>
+                    <ShirtArtwork colour={garmentColor} side={view} product={product} />
+                  </Group>
                   {showSafeArea && (
-                    <>
+                    <Group ref={safeAreaRef} name="editor-guides" listening={false}>
                       <Rect
                         x={printArea.x}
                         y={printArea.y}
@@ -1170,7 +1231,7 @@ const DesignEditor = ({
                         fill="#475569"
                         listening={false}
                       />
-                    </>
+                    </Group>
                   )}
                   {elements.map((element) => (
                     <ArtworkElement

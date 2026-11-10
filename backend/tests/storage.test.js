@@ -50,6 +50,10 @@ test('local storage keeps public and private images apart and rejects non-images
   assert.deepEqual(file.buffer, PNG);
   assert.equal(file.contentType, 'image/png');
 
+  const artwork = await storage.saveImage(PNG, { folder: 'orders/artwork', visibility: 'private' });
+  assert.ok(storage.isPrivateRef(artwork.ref));
+  assert.deepEqual((await storage.readPrivate(artwork.ref)).buffer, PNG);
+
   await assert.rejects(storage.saveImage(Buffer.from('not an image at all, just text'), { folder: 'products' }), /Unsupported/);
   await assert.rejects(storage.saveImage(PNG, { folder: '../escape' }), /Unknown storage folder/);
   await assert.rejects(storage.saveImage(PNG, { folder: 'products', visibility: 'private' }), /Unknown storage folder/);
@@ -82,7 +86,8 @@ test('public order view masks contact details and omits street address and stora
     address: { street: '12 Secret Lane', city: 'Pune', state: 'MH', zipCode: '411001', country: 'India' },
     originalImagePath: 'private:adviprints/orders/original/x.png',
     previewImagePath: 'private:adviprints/orders/preview/x.png',
-    uploadedImageData: 'private:adviprints/orders/uploaded/x.png'
+    uploadedImageData: 'private:adviprints/orders/uploaded/x.png',
+    artworkExports: [{ imagePath: 'private:adviprints/orders/artwork/x.png', side: 'front', zoneId: 'center' }]
   });
   const json = JSON.stringify(view);
   assert.ok(!json.includes('12 Secret Lane'));

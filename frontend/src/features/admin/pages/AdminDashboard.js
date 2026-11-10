@@ -60,13 +60,13 @@ const AdminDashboard = () => {
             className={styles.navItem}
             onClick={() => handleNavigation('/admin/orders')}
           >
-            📦 Custom Orders
+            📦 Orders
           </button>
           <button
             className={styles.navItem}
             onClick={() => handleNavigation('/admin/products')}
           >
-            👕 Product Variants
+            👕 Products & Approval
           </button>
           <button
             className={styles.navItem}

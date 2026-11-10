@@ -8,20 +8,21 @@ const {
   getAllOrders,
   getAllOrdersAdmin,
   getOrder,
+  syncQikinkStatus,
   updateOrderStatus,
   getOrderArtwork,
   deleteOrder
 } = require('../controllers/orderController');
 
-// Public: customers place orders and view their own order confirmation by id.
-// A fixed-size JSON body is parsed here because the artwork arrives as base64.
-router.post('/', orderLimiter, express.json({ limit: '30mb' }), createOrder);
+// Public: customers place orders and view their order confirmation by id.
+router.post('/', orderLimiter, express.json({ limit: '1mb' }), createOrder);
 
 // Admin
 router.get('/', requireAdmin, getAllOrders);
 router.get('/public/all', requireAdmin, getAllOrdersAdmin); // legacy path; no longer public
 router.get('/:id/artwork/:kind', requireAdmin, validateObjectId(), getOrderArtwork);
 router.get('/:id/download/:kind', requireAdmin, validateObjectId(), getOrderArtwork);
+router.get('/:id/qikink-status', requireAdmin, validateObjectId(), syncQikinkStatus);
 
 // Public view is sanitised; administrators with a valid token get the full record.
 router.get('/:id', optionalAuth, validateObjectId(), getOrder);

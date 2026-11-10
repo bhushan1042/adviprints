@@ -54,6 +54,8 @@ const ADMIN_ONLY = [
   ['POST', '/admin/homepage'],
   ['POST', '/products'],
   ['PUT', '/products/507f1f77bcf86cd799439011'],
+  ['GET', '/products/admin/all'],
+  ['PATCH', '/products/507f1f77bcf86cd799439011/status'],
   ['DELETE', '/products/507f1f77bcf86cd799439011'],
   ['POST', '/categories'],
   ['POST', '/homepage'],
@@ -65,6 +67,7 @@ const ADMIN_ONLY = [
   ['GET', '/api/orders/507f1f77bcf86cd799439011/artwork/original'],
   ['GET', '/api/orders/507f1f77bcf86cd799439011/download/original'],
   ['PUT', '/api/orders/507f1f77bcf86cd799439011'],
+  ['GET', '/api/orders/507f1f77bcf86cd799439011/qikink-status'],
   ['DELETE', '/api/orders/507f1f77bcf86cd799439011']
 ];
 
@@ -108,6 +111,12 @@ test('malformed ids are rejected with 400 before touching the database', async (
   assert.equal((await fetch(`${base}/reviews?productId[$ne]=x`)).status, 400);
 });
 
+test('order ID alone does not authorize public order lookup', async () => {
+  const res = await fetch(`${base}/api/orders/507f1f77bcf86cd799439011`);
+  assert.equal(res.status, 404);
+  assert.deepEqual(await res.json(), { error: 'Order not found' });
+});
+
 test('legacy private artwork folders are never served statically', async () => {
   const dir = path.join(config.uploadsDir, 'original');
   fs.mkdirSync(dir, { recursive: true });
@@ -145,6 +154,16 @@ test('CORS only allows configured origins', async () => {
   assert.equal(allowed.headers.get('access-control-allow-origin'), 'https://shop.example.com');
   const denied = await fetch(`${base}/api/health`, { headers: { Origin: 'https://evil.example.com' } });
   assert.equal(denied.headers.get('access-control-allow-origin'), null);
+
+  const checkoutPreflight = await fetch(`${base}/api/orders/507f1f77bcf86cd799439011`, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'https://shop.example.com',
+      'Access-Control-Request-Method': 'GET',
+      'Access-Control-Request-Headers': 'X-Checkout-Id'
+    }
+  });
+  assert.match(checkoutPreflight.headers.get('access-control-allow-headers') || '', /X-Checkout-Id/i);
 });
 
 test('unknown routes and errors do not leak internals', async () => {

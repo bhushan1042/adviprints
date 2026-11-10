@@ -18,6 +18,8 @@ const AdminOrderDetails = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [artworkImages, setArtworkImages] = useState({});
+  const [isSyncingQikink, setIsSyncingQikink] = useState(false);
+  const [qikinkSyncError, setQikinkSyncError] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -52,7 +54,14 @@ const AdminOrderDetails = () => {
     };
   }, [orderId]);
 
-  const artworkEntries = useMemo(() => ARTWORK_ITEMS.filter((item) => Boolean(order?.[item.field])), [order]);
+  const artworkEntries = useMemo(() => [
+    ...ARTWORK_ITEMS.filter((item) => Boolean(order?.[item.field])),
+    ...(order?.artworkExports || []).map((item, index) => ({
+      key: `artwork-${index}`,
+      label: `${item.side} · ${item.zoneName || item.zoneId} artwork`,
+      metadata: item
+    }))
+  ], [order]);
 
   useEffect(() => {
     if (!order || artworkEntries.length === 0) {
@@ -119,6 +128,20 @@ const AdminOrderDetails = () => {
       alert(`Error: ${getErrorMessage(requestError, 'Failed to update order status.')}`);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleQikinkSync = async () => {
+    if (!order) return;
+    setIsSyncingQikink(true);
+    setQikinkSyncError('');
+    try {
+      const { data } = await api.get(`/api/orders/${orderId}/qikink-status`, withAuth());
+      setOrder(data);
+    } catch (requestError) {
+      setQikinkSyncError(getErrorMessage(requestError, 'Unable to synchronize Qikink status.'));
+    } finally {
+      setIsSyncingQikink(false);
     }
   };
 
@@ -228,6 +251,16 @@ const AdminOrderDetails = () => {
 
         <div className={styles.card}>
           <h3>Product Details</h3>
+          {order.lineItems?.length ? order.lineItems.map((item, index) => (
+            <div className={styles.infoGrid} key={`${item.productId}-${index}`}>
+              <div className={styles.infoRow}><label>Product</label><p>{item.productName}</p></div>
+              <div className={styles.infoRow}><label>Variant</label><p>{item.colour} / {item.size}</p></div>
+              <div className={styles.infoRow}><label>Qikink SKU</label><p>{item.qikinkSku}</p></div>
+              <div className={styles.infoRow}><label>Unit price</label><p>₹{Number(item.productPrice || 0).toFixed(2)}</p></div>
+              <div className={styles.infoRow}><label>Quantity</label><p>{item.quantity}</p></div>
+              <div className={styles.infoRow}><label>Line total</label><p>₹{Number(item.totalPrice || 0).toFixed(2)}</p></div>
+            </div>
+          )) : (
           <div className={styles.infoGrid}>
             <div className={styles.infoRow}>
               <label>Product</label>
@@ -245,6 +278,66 @@ const AdminOrderDetails = () => {
               <label>Total Price</label>
               <p className={styles.totalPrice}>${Number(order.totalPrice || 0).toFixed(2)}</p>
             </div>
+          </div>
+          )}
+        </div>
+
+        <div className={styles.card}>
+          <h3>Qikink Fulfilment</h3>
+          {order.qikinkFulfillment?.orderId ? (
+            <button type="button" className={styles.updateBtn} onClick={handleQikinkSync} disabled={isSyncingQikink}>
+              {isSyncingQikink ? 'Checking…' : 'Refresh Qikink status'}
+            </button>
+          ) : null}
+          {qikinkSyncError ? <p role="alert">{qikinkSyncError}</p> : null}
+          <div className={styles.infoGrid}>
+            <div className={styles.infoRow}>
+              <label>Submission state</label>
+              <p>{order.qikinkFulfillment?.state || 'not_configured'}</p>
+            </div>
+            {order.qikinkFulfillment?.orderId && (
+              <div className={styles.infoRow}>
+                <label>Qikink order ID</label>
+                <p>{order.qikinkFulfillment.orderId}</p>
+              </div>
+            )}
+            {order.qikinkFulfillment?.rawStatus && (
+              <div className={styles.infoRow}>
+                <label>Qikink status</label>
+                <p>{order.qikinkFulfillment.rawStatus}</p>
+              </div>
+            )}
+            {order.qikinkFulfillment?.reference && (
+              <div className={styles.infoRow}>
+                <label>Qikink order reference</label>
+                <p>{order.qikinkFulfillment.reference}</p>
+              </div>
+            )}
+            {order.qikinkFulfillment?.shippingType && (
+              <div className={styles.infoRow}>
+                <label>Shipping method</label>
+                <p>{order.qikinkFulfillment.shippingType}</p>
+              </div>
+            )}
+            {order.qikinkFulfillment?.deliveredOn && (
+              <div className={styles.infoRow}>
+                <label>Delivered on</label>
+                <p>{order.qikinkFulfillment.deliveredOn}</p>
+              </div>
+            )}
+            <div className={styles.infoRow}>
+              <label>Tracking</label>
+              <p>Tracking details are not returned by the documented Qikink API.</p>
+            </div>
+            {order.qikinkFulfillment?.lastError && (
+              <div className={styles.infoRow}>
+                <label>Last issue</label>
+                <p>{order.qikinkFulfillment.lastError}</p>
+              </div>
+            )}
+            <p className={styles.fulfillmentNotice}>
+              COD orders are submitted to Qikink before delivery collection. This may start fulfilment before the customer pays.
+            </p>
           </div>
         </div>
 
@@ -265,7 +358,7 @@ const AdminOrderDetails = () => {
             </div>
             <div className={styles.infoRow}>
               <label>Rotation</label>
-              <p>{Number(order.position?.rotation || 0).toFixed(0)}�</p>
+              <p>{Number(order.position?.rotation || 0).toFixed(0)}�</p>
             </div>
           </div>
         </div>
@@ -274,14 +367,22 @@ const AdminOrderDetails = () => {
           <div className={`${styles.card} ${styles.imagesCard}`}>
             <h3>Design Previews</h3>
             <div className={styles.imagesGrid}>
-              {artworkEntries.map(({ key, label }) => {
+              {artworkEntries.map(({ key, label, metadata }) => {
                 const artwork = artworkImages[key];
 
                 return (
                   <div className={styles.imageBox} key={key}>
                     <label>{label}</label>
                     {artwork?.src ? (
-                      <img src={artwork.src} alt={label} width="320" height="320" style={{ aspectRatio: '1 / 1', objectFit: 'contain' }} />
+                      <>
+                        <img src={artwork.src} alt={label} width="320" height="320" style={{ aspectRatio: '1 / 1', objectFit: 'contain' }} />
+                        {metadata && (
+                          <small>
+                            Transparent PNG · {metadata.pixelWidth} × {metadata.pixelHeight} px · editor zone coordinates only; physical print size is not configured.
+                          </small>
+                        )}
+                        <a href={artwork.src} download={`${key}.png`}>Download PNG</a>
+                      </>
                     ) : artwork?.error ? (
                       <small>Image unavailable</small>
                     ) : (

@@ -53,7 +53,7 @@ const createApp = (config) => {
         return callback(null, false);
       },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization']
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Checkout-Id']
     })
   );
 

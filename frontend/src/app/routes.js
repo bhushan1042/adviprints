@@ -12,6 +12,7 @@ const HowItWorks = lazy(() => import('../pages/HowItWorks'));
 const FAQ = lazy(() => import('../pages/FAQ'));
 const Contact = lazy(() => import('../pages/Contact'));
 const CheckoutPage = lazy(() => import('../features/checkout/pages/CheckoutPage'));
+const CartPage = lazy(() => import('../features/checkout/pages/CartPage'));
 const OrderConfirmation = lazy(() => import('../features/checkout/pages/OrderConfirmation'));
 const OrderSuccess = lazy(() => import('../features/checkout/pages/OrderSuccess'));
 const AdminLogin = lazy(() => import('../features/admin/pages/AdminLogin'));
@@ -48,6 +49,7 @@ const AppRoutes = () => {
           <Route path="/" element={<><Seo {...HOME_META} /><Home /></>} />
           <Route path="/category/:slug" element={<Category />} />
           <Route path="/product/:slug" element={<ProductDetails />} />
+          <Route path="/cart" element={<CartPage />} />
           <Route path="/about" element={<StaticPage path="/about"><About /></StaticPage>} />
           <Route path="/how-it-works" element={<StaticPage path="/how-it-works"><HowItWorks /></StaticPage>} />
           <Route path="/faq" element={<StaticPage path="/faq"><FAQ /></StaticPage>} />

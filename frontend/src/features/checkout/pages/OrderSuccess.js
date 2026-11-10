@@ -19,7 +19,11 @@ const OrderSuccess = () => {
     const fetchOrder = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get(`/api/orders/${id}`, { signal: controller.signal });
+        const checkoutId = sessionStorage.getItem('adviprintsCheckoutId');
+        const { data } = await api.get(`/api/orders/${id}`, {
+          headers: checkoutId ? { 'X-Checkout-Id': checkoutId } : undefined,
+          signal: controller.signal
+        });
 
         if (!ignore) {
           setOrder(data);
@@ -147,6 +151,23 @@ const OrderSuccess = () => {
           <div className={styles.detailsSection}>
             <div className={styles.detailCard}>
               <h3>Product Details</h3>
+              {order.lineItems?.length ? order.lineItems.map((item, index) => (
+                <React.Fragment key={`${item.productName}-${index}`}>
+                  <div className={styles.detailRow}>
+                    <span className={styles.label}>Product</span>
+                    <span className={styles.value}>{item.productName}</span>
+                  </div>
+                  <div className={styles.detailRow}>
+                    <span className={styles.label}>Variant</span>
+                    <span className={styles.value}>{item.colour} / {item.size} · Qty {item.quantity}</span>
+                  </div>
+                  <div className={styles.detailRow}>
+                    <span className={styles.label}>Line total</span>
+                    <span className={styles.value}>Rs {Number(item.totalPrice || 0).toFixed(2)}</span>
+                  </div>
+                </React.Fragment>
+              )) : (
+                <>
               <div className={styles.detailRow}>
                 <span className={styles.label}>Product</span>
                 <span className={styles.value}>{order.productName || 'Custom T-Shirt'}</span>
@@ -171,17 +192,40 @@ const OrderSuccess = () => {
                 <span className={styles.label}>Quantity</span>
                 <span className={styles.value}>{order.quantity || 1}</span>
               </div>
+                </>
+              )}
               <div className={styles.divider} />
               <div className={styles.detailRow}>
                 <span className={styles.label}>Total</span>
                 <span className={`${styles.value} ${styles.total}`}>Rs {Number(order.totalPrice || 0).toFixed(2)}</span>
               </div>
-              {!order.originalImagePath ? (
+              {!order.originalImagePath && order.designTemplate ? (
                 <div className={styles.designInfo}>
                   <p><strong>Template:</strong> {order.designTemplate === 'centered' ? 'Centered Print' : 'Chest Pocket'}</p>
                   <p><strong>Position:</strong> X: {Math.round(order.position?.x || 0)}, Y: {Math.round(order.position?.y || 0)}</p>
                 </div>
               ) : null}
+            </div>
+
+            <div className={styles.detailCard}>
+              <h3>Qikink Fulfilment</h3>
+              <div className={styles.detailRow}>
+                <span className={styles.label}>Submission</span>
+                <span className={styles.value}>{order.qikinkFulfillment?.state || 'not_configured'}</span>
+              </div>
+              {order.qikinkFulfillment?.orderId ? (
+                <div className={styles.detailRow}>
+                  <span className={styles.label}>Qikink order ID</span>
+                  <span className={styles.value}>{order.qikinkFulfillment.orderId}</span>
+                </div>
+              ) : null}
+              {order.qikinkFulfillment?.rawStatus ? (
+                <div className={styles.detailRow}>
+                  <span className={styles.label}>Fulfilment status</span>
+                  <span className={styles.value}>{order.qikinkFulfillment.rawStatus}</span>
+                </div>
+              ) : null}
+              <p>Tracking information is not available in the documented Qikink API.</p>
             </div>
 
             <div className={styles.detailCard}>

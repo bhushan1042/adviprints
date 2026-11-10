@@ -6,11 +6,54 @@
   color: #172b4d;
 }
 
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
 .header {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
+}
+
+.problemList {
+  margin: 0;
+  padding: 12px 12px 12px 32px;
+  border-radius: 8px;
+  background: #fff4e5;
+  color: #9a4d00;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.productImage {
+  width: min(100%, 220px);
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.imageList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.imageItem {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  max-width: 150px;
+  color: #627d98;
+  font-size: 12px;
+}
+
+.imageItem img {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
 .header h1 {
@@ -61,14 +104,22 @@
   font-weight: 700;
 }
 
-.searchLabel input,
-.fields textarea {
+.fields input,
+.fields select,
+.fields textarea,
+.searchLabel input {
   width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 9px;
   background: white;
   color: #102a43;
   font: inherit;
+}
+
+.fields input,
+.fields select {
+  min-height: 42px;
+  padding: 9px 11px;
 }
 
 .searchLabel input {
@@ -84,6 +135,8 @@
   line-height: 1.55;
 }
 
+.fields input:focus,
+.fields select:focus,
 .searchLabel input:focus,
 .fields textarea:focus {
   border-color: #ed8b45;
@@ -151,10 +204,49 @@
   color: #9a4d00;
 }
 
+.disabled {
+  background: #fee4e2;
+  color: #b42318;
+}
+
 .fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+}
+
+.mappingField {
+  display: grid;
+  gap: 7px;
+  color: #243b53;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mappingField small {
+  color: #627d98;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.mappingField textarea {
+  width: 100%;
+  min-height: 112px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: white;
+  color: #102a43;
+  font: inherit;
+  font-weight: 500;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.mappingField textarea:focus {
+  border-color: #ed8b45;
+  outline: 3px solid rgb(237 139 69 / 16%);
 }
 
 .presetButton {

@@ -26,10 +26,25 @@ const toPublicOrder = (order) => {
     address: { city: address.city, state: address.state, country: address.country },
     productName: o.productName,
     productPrice: o.productPrice,
+    productImageUrl: o.productImageUrl,
     size: o.size,
     colour: o.colour,
     quantity: o.quantity,
     totalPrice: o.totalPrice,
+    lineItems: (o.lineItems || []).map((item) => ({
+      productName: item.productName,
+      productPrice: item.productPrice,
+      productImageUrl: item.productImageUrl,
+      size: item.size,
+      colour: item.colour,
+      quantity: item.quantity,
+      totalPrice: item.totalPrice
+    })),
+    qikinkFulfillment: {
+      state: o.qikinkFulfillment?.state || 'not_configured',
+      orderId: o.qikinkFulfillment?.orderId || '',
+      rawStatus: o.qikinkFulfillment?.rawStatus || ''
+    },
     designTemplate: o.designTemplate,
     position: o.position,
     paymentMethod: o.paymentMethod,
