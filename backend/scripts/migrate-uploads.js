@@ -67,7 +67,7 @@ const run = async () => {
   await connectDatabase(config);
   console.log(apply ? 'APPLY mode: uploading and updating references' : 'DRY RUN: nothing will be changed (use --apply)');
 
-  await migrateFields(Product, ['imageUrl'], { folder: 'products', visibility: 'public' });
+  await migrateFields(Product, ['imageUrl', 'thumbnailUrl'], { folder: 'products', visibility: 'public' });
   await migrateFields(Category, ['imageUrl', 'bannerImageUrl'], { folder: 'categories', visibility: 'public' });
   await migrateFields(Promotion, ['bannerImage'], { folder: 'banners', visibility: 'public' });
   await migrateFields(

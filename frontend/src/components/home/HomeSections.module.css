@@ -1,0 +1,104 @@
+.howSection {
+  background: linear-gradient(145deg, #f3f7fa 0%, #fff8f1 100%);
+}
+
+.whySection {
+  background: #fff;
+}
+
+.stepCard,
+.benefitCard {
+  --card-accent: #e86a17;
+  --card-tint: #fff0e3;
+  position: relative;
+  overflow: hidden;
+  padding: 1.75rem;
+  border: 1px solid rgba(217, 226, 236, .8);
+  border-radius: 1.5rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(10, 31, 51, .04);
+}
+
+.stepCard:nth-child(4n + 2),
+.benefitCard:nth-child(4n + 2) {
+  --card-accent: #317c95;
+  --card-tint: #e7f5f8;
+}
+
+.stepCard:nth-child(4n + 3),
+.benefitCard:nth-child(4n + 3) {
+  --card-accent: #9c657b;
+  --card-tint: #f9edf1;
+}
+
+.stepCard:nth-child(4n + 4),
+.benefitCard:nth-child(4n + 4) {
+  --card-accent: #648050;
+  --card-tint: #edf5e8;
+}
+
+.stepCard::after,
+.benefitCard::after {
+  position: absolute;
+  top: -1.5rem;
+  right: -1.5rem;
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 50%;
+  background: var(--card-tint);
+  content: '';
+}
+
+.stepIcon,
+.benefitIcon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 3.75rem;
+  height: 3.75rem;
+  margin-bottom: 1.35rem;
+  place-items: center;
+  border-radius: 1.1rem;
+  background: var(--card-tint);
+  color: var(--card-accent);
+  transition: transform 300ms ease;
+}
+
+.stepCard:hover .stepIcon,
+.benefitCard:hover .benefitIcon {
+  transform: rotate(-8deg) scale(1.08);
+}
+
+.cardTitle {
+  position: relative;
+  z-index: 1;
+  color: #0a1f33;
+  font-family: Sora, system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.cardDescription {
+  position: relative;
+  z-index: 1;
+  margin-top: .6rem;
+  color: #486581;
+  font-size: .9rem;
+  line-height: 1.65;
+}
+
+.benefitCard {
+  background: linear-gradient(160deg, #fff 65%, var(--card-tint));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepIcon,
+  .benefitIcon {
+    transition: none;
+  }
+
+  .stepCard:hover .stepIcon,
+  .benefitCard:hover .benefitIcon {
+    transform: none;
+  }
+}

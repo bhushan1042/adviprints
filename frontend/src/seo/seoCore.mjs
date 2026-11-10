@@ -10,34 +10,24 @@ export const STATIC_PAGES = [
   {
     path: '/about',
     title: 'About Adviprints',
-    description: 'Learn about Adviprints, an online custom T-shirt printing store where you design your own apparel.'
-  },
-  {
-    path: '/how-it-works',
-    title: 'How Custom T-Shirt Printing Works',
-    description: 'See how to customize a T-shirt with Adviprints: pick a product, upload your artwork or add text, preview your design and order.'
-  },
-  {
-    path: '/faq',
-    title: 'Frequently Asked Questions',
-    description: 'Answers to common questions about ordering, uploading your own design and customizing T-shirts with Adviprints.'
+    description: 'Discover Adviprints and explore our collection of ready-designed products, available to order online.'
   },
   {
     path: '/contact',
     title: 'Contact Adviprints',
-    description: 'Get in touch with the Adviprints team for questions about custom T-shirt printing and your order.'
+    description: 'Get in touch with the Adviprints team for questions about products and orders.'
   }
 ];
 
 export const HOME_META = {
-  title: 'Custom T-Shirt Printing & Personalized T-Shirts Online | Adviprints',
-  description: 'Design custom printed T-shirts online with Adviprints. Choose a T-shirt, upload your own design or add text, preview it and place your order.',
+  title: 'Shop Ready-Designed Products Online | Adviprints',
+  description: 'Explore ready-designed products at Adviprints. Choose your favourites, select available options and order online.',
   path: '/'
 };
 
-export const SHOP_META = {
-  title: 'Shop Custom T-Shirts | Adviprints',
-  description: 'Browse all T-shirts available for customization at Adviprints. Pick a style, add your design and order online.',
+export const CATEGORIES_META = {
+  title: 'Shop All Categories | Adviprints',
+  description: 'Explore all product categories at Adviprints and find your favourites.',
   path: '/category/all'
 };
 
@@ -116,16 +106,16 @@ export const categoryMeta = (category, apiBase = '') => {
   const name = category.name;
   const description = category.description
     ? truncate(category.description, 155)
-    : `Browse ${name} at Adviprints. Choose a style, add your own design or text and order online.`;
+    : `Browse ${name} at Adviprints. Explore the collection and order your favourites online.`;
   return {
-    title: `${name} - Custom Printing | ${SITE_NAME}`,
+    title: `${name} | ${SITE_NAME}`,
     description,
     path: `/category/${slug}`,
     image: absoluteImageUrl(category.bannerImageUrl || category.imageUrl, apiBase),
     jsonLd: [
       breadcrumbJsonLd([
         { name: 'Home', path: '/' },
-        { name: 'Shop', path: '/category/all' },
+        { name: 'All Categories', path: '/category/all' },
         { name, path: `/category/${slug}` }
       ])
     ]
@@ -146,7 +136,7 @@ export const productMeta = (product, category, apiBase = '') => {
   const categoryName = category?.name || '';
   const description = product.description
     ? truncate(product.description, 155)
-    : `Customize the ${name}${categoryName ? ` (${categoryName})` : ''} at Adviprints: upload your design or add text, preview it and order online.`;
+    : `Shop ${name}${categoryName ? ` from ${categoryName}` : ''} at Adviprints. Choose the available options and order online.`;
 
   const productLd = {
     '@context': 'https://schema.org',
@@ -171,12 +161,12 @@ export const productMeta = (product, category, apiBase = '') => {
     productLd.offers = offer;
   }
 
-  const crumbs = [{ name: 'Home', path: '/' }, { name: 'Shop', path: '/category/all' }];
+  const crumbs = [{ name: 'Home', path: '/' }, { name: 'All Categories', path: '/category/all' }];
   if (category) crumbs.push({ name: category.name, path: `/category/${categorySlug(category)}` });
   crumbs.push({ name, path });
 
   return {
-    title: `${name} - Custom Print${categoryName ? ` ${categoryName}` : ''} | ${SITE_NAME}`,
+    title: `${name}${categoryName ? ` - ${categoryName}` : ''} | ${SITE_NAME}`,
     description,
     path,
     image,

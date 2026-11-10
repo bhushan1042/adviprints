@@ -18,11 +18,11 @@ export default function About() {
               Our Story
             </span>
             <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
-              Quality T-Shirts,
-              <span className="block text-orange-500">Made for Everyone</span>
+              Products to Love,
+              <span className="block text-orange-500">Made for You</span>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-navy-200">
-              Adviprints brings product selection and personalized printing together in one simple storefront.
+              Adviprints brings a collection of ready-designed products together in one simple storefront.
             </p>
           </div>
         </div>
@@ -41,14 +41,14 @@ export default function About() {
           <div>
             <SectionHeading
               eyebrow="How It Works"
-              title="Product Selection Meets Custom Design"
+              title="Discover Your Next Favourite"
             />
             <div className="mt-5 space-y-4 text-navy-600 leading-relaxed">
               <p>
-                Choose a product from the catalog, add your own artwork or text, and review the design before placing an order.
+                Explore the catalog, choose a product you love, and select from its available options.
               </p>
               <p>
-                The storefront is designed to make product options and the customization process clear from selection through checkout.
+                Our storefront makes it easy to review your choices and place an order.
               </p>
             </div>
           </div>
@@ -62,16 +62,16 @@ export default function About() {
             center
             eyebrow="What Drives Us"
             title="Our Core Values"
-            subtitle="The principles that guide every t-shirt we print."
+            subtitle="A shopping experience built around clear choices and easy ordering."
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { icon: ShoppingBag, title: 'Live Product Catalog', desc: 'Products, prices, colours, and configured sizes are loaded from the Adviprints catalog.' },
-              { icon: Palette, title: 'Design Your Print', desc: 'Choose a print layout, upload artwork or add text, then adjust and preview the design.' },
-              { icon: Award, title: 'Order Handoff', desc: 'The selected product, variants, quantity, and design are included in the order request.' },
-              { icon: Heart, title: 'Artwork Privacy', desc: 'Customer design files are handled by the existing private order-artwork storage flow.' },
-              { icon: Target, title: 'Clear Choices', desc: 'Only product options configured in the catalog are offered during customization.' },
-              { icon: TrendingUp, title: 'One Connected Flow', desc: 'Continue from product details through customization, review, and checkout.' },
+              { icon: Palette, title: 'Ready to Discover', desc: 'Explore a collection of products with designs already selected.' },
+              { icon: Award, title: 'Order with Confidence', desc: 'Review your selected items and quantities before placing your order.' },
+              { icon: Heart, title: 'Here to Help', desc: 'Contact us if you have questions about a product or an order.' },
+              { icon: Target, title: 'Clear Choices', desc: 'See the available options on each product page.' },
+              { icon: TrendingUp, title: 'Simple Checkout', desc: 'Continue from your cart to delivery details and order review.' },
             ].map((v, i) => (
               <ValueCard key={v.title} value={v} index={i} />
             ))}
@@ -85,13 +85,13 @@ export default function About() {
           center
           eyebrow="Your Order"
           title="From Catalog to Checkout"
-          subtitle="A connected path from choosing a real product to submitting its custom design."
+          subtitle="A simple path from discovering products to placing an order."
         />
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: ShoppingBag, title: 'Choose', desc: 'Browse products and their available options.' },
-            { icon: Palette, title: 'Customize', desc: 'Place uploaded artwork or text in the print area.' },
-            { icon: Award, title: 'Review', desc: 'Check the generated T-shirt design preview.' },
+            { icon: Palette, title: 'Select', desc: 'Choose the available options and quantity.' },
+            { icon: Award, title: 'Review', desc: 'Check your cart and delivery details.' },
             { icon: Users, title: 'Order', desc: 'Enter delivery details and submit the order.' },
           ].map((value, i) => (
             <ValueCard key={value.title} value={value} index={i} />
@@ -106,7 +106,7 @@ export default function About() {
             Join the Adviprints Family
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-navy-200">
-            Choose a product and create a design that is yours.
+            Find something you love in the Adviprints collection.
           </p>
           <div className="mt-8 flex justify-center">
             <Button to="/category/all" size="lg" variant="primary">

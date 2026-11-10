@@ -32,6 +32,12 @@
     input,select,textarea{padding:8px;border:1px solid #d1d5db;border-radius:6px;width:100%;box-sizing:border-box}
     .muted{color:var(--muted);font-size:13px}
     .small{font-size:13px}
+    .product-section{margin-top:20px;padding:18px;border:1px solid #e5e7eb;border-radius:10px;background:#fafbfc}
+    .product-section h4{margin:0 0 6px;font-size:16px}
+    .product-section label{display:block;font-weight:600;margin-bottom:5px}
+    .product-section .form-row{gap:16px}
+    .product-section table input{min-width:125px}
+    .product-section table th{white-space:nowrap}
   </style>
 </head>
 <body>
@@ -614,14 +620,16 @@
     }
 
     // Product Add/Edit share one form: details, sizes/colours, and Qikink SKU mappings.
-    const PRINT_TYPE_OPTIONS = [1, 2, 3, 5, 6, 7, 12, 13, 14, 15, 17, 23];
     const csvList = (value) => [...new Set(String(value || '').split(',').map((s) => s.trim()).filter(Boolean))];
 
     function productFormHtml(p, cats){
       return `
+        <div class="product-section">
+        <h4>Product details</h4>
+        <div class="small muted" style="margin-bottom:14px">Add the details customers will see. Set your own selling price.</div>
         <div class="form-row">
           <div>
-            <label for="p_name">Name</label>
+            <label for="p_name">Product name</label>
             <input id="p_name" value="${escapeHtml(p.name||'')}" placeholder="e.g. Unisex DryFit T-Shirt" />
           </div>
           <div>
@@ -640,27 +648,42 @@
           <label for="p_description">Description</label>
           <textarea id="p_description" rows="3" placeholder="Shown on the product page">${escapeHtml(p.description||'')}</textarea>
         </div>
-        <div class="form-row" style="margin-top:8px">
+        </div>
+        <div class="product-section">
+        <h4>Product variations</h4>
+        <div class="small muted">Enter both sizes and colours below. A separate row will appear automatically for each combination.</div>
+        <div class="form-row" style="margin-top:14px">
           <div>
             <label for="p_sizes">Sizes</label>
             <input id="p_sizes" value="${escapeHtml((p.sizes||[]).join(', '))}" placeholder="e.g. XS, S, M, L, XL" />
-            <div class="small muted">Comma-separated.</div>
+            <div class="small muted">Keep all sizes here, separated by commas. To add one without replacing the others, use the button below.</div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <input id="p_new_size" aria-label="New size" placeholder="New size, e.g. M" />
+              <button type="button" class="btn primary" id="p_add_size" style="white-space:nowrap">Add size</button>
+            </div>
+            <div id="p_size_message" class="small muted" role="status" aria-live="polite"></div>
           </div>
           <div>
             <label for="p_colours">Colours</label>
             <input id="p_colours" value="${escapeHtml((p.colours||[]).join(', '))}" placeholder="e.g. White, Black" />
-            <div class="small muted">Comma-separated.</div>
+            <div class="small muted">Example: White</div>
           </div>
         </div>
         <div style="margin-top:8px">
-          <label>Qikink SKU mapping</label>
-          <div class="small muted">Enter the Qikink SKU and print type ID for every colour and size. Incomplete rows block approval.</div>
+          <div class="small muted">Copy the Store SKU, Product SKU, Design SKU and Product Cost for each variation from Qikink. Store SKU and Product Cost are required for approval. Product and Design SKUs are saved for reference.</div>
           <div id="p_variants" style="margin-top:6px"></div>
         </div>
-        <div style="margin-top:8px">
-          <label for="p_image_file">Image</label>
+        </div>
+        <div class="product-section">
+          <h4>Product images</h4>
+          <label for="p_thumbnail_file">Product thumbnail image</label>
+          <input id="p_thumbnail_file" type="file" accept="image/*" />
+          <div class="small muted">Shown in product lists. If left empty, the product image is used.</div>
+          <div style="margin-top:8px"><img id="p_thumbnail_preview" src="${escapeHtml(p.thumbnailUrl||'')}" alt="Current product thumbnail" style="max-width:160px; ${p.thumbnailUrl ? '' : 'display:none;'} border-radius:6px; border:1px solid #eee"/></div>
+          <input type="hidden" id="p_thumbnailUrl" value="${escapeHtml(p.thumbnailUrl||'')}" />
+          <label for="p_image_file" style="margin-top:14px">Product image</label>
           <input id="p_image_file" type="file" accept="image/*" />
-          <div class="small muted">JPEG, PNG or WebP, max 10MB. Leave empty to keep the current image.</div>
+          <div class="small muted">Shown on the product detail page. Both images accept JPEG, PNG or WebP, max 10MB. Leave empty to keep existing images.</div>
           <div style="margin-top:8px"><img id="p_image_preview" src="${escapeHtml(p.imageUrl||'')}" alt="" style="max-width:160px; ${p.imageUrl ? '' : 'display:none;'} border-radius:6px; border:1px solid #eee"/></div>
           <input type="hidden" id="p_imageUrl" value="${escapeHtml(p.imageUrl||'')}" />
           <input type="hidden" id="p_imageFilename" value="${escapeHtml(p.imageFilename||'')}" />
@@ -670,12 +693,14 @@
     }
 
     // One SKU row per colour/size combination. Typed values survive when sizes or colours change.
-    function mountVariantTable(initialVariants){
+    function mountVariantTable(initialVariants, initialExcluded = []){
       const container = document.getElementById('p_variants');
-      const draft = new Map((initialVariants||[]).map((v) => [`${String(v.size).toLowerCase()}|${String(v.colour).toLowerCase()}`, { sku: v.sku || '', printTypeId: String(v.printTypeId ?? '') }]));
+      const draft = new Map((initialVariants||[]).map((v) => [`${String(v.size).trim().toLowerCase()}|${String(v.colour).split('|')[0].trim().toLowerCase()}`, { sku: v.sku || '', printTypeId: v.printTypeId, productSku: v.productSku || '', designSku: v.designSku || '', qikinkPrice: String(v.qikinkPrice ?? '') }]));
+      const excluded = new Set(initialExcluded.map((v) => `${String(v.size).trim().toLowerCase()}|${String(v.colour).split('|')[0].trim().toLowerCase()}`));
       const snapshot = () => {
         container.querySelectorAll('tr[data-key]').forEach((row) => {
-          draft.set(row.dataset.key, { sku: row.querySelector('.v_sku').value.trim(), printTypeId: row.querySelector('.v_pt').value });
+          const previous = draft.get(row.dataset.key) || {};
+          draft.set(row.dataset.key, { ...previous, sku: row.querySelector('.v_sku').value.trim(), productSku: row.querySelector('.v_product_sku').value.trim(), designSku: row.querySelector('.v_design_sku').value.trim(), qikinkPrice: row.querySelector('.v_price').value });
         });
       };
       const render = () => {
@@ -683,28 +708,87 @@
         const sizes = csvList(document.getElementById('p_sizes').value);
         const colours = csvList(document.getElementById('p_colours').value);
         if (!sizes.length || !colours.length) {
-          container.innerHTML = '<div class="small muted">Add sizes and colours to create SKU rows.</div>';
+          container.innerHTML = '<div class="small muted">No rows yet. Enter at least one size and one colour above.</div>';
           return;
         }
         const rows = [];
-        colours.forEach((colour) => sizes.forEach((size) => {
+        const removed = [];
+        colours.forEach((colourOption) => sizes.forEach((size) => {
+          const colour = colourOption.split('|')[0].trim();
           const key = `${size.toLowerCase()}|${colour.toLowerCase()}`;
-          const d = draft.get(key) || { sku: '', printTypeId: '' };
+          if (excluded.has(key)) {
+            removed.push(`<button type="button" class="btn v_restore" data-key="${escapeHtml(key)}">Restore ${escapeHtml(colour)} / ${escapeHtml(size)}</button>`);
+            return;
+          }
+          const d = draft.get(key) || { sku: '', productSku: '', designSku: '', qikinkPrice: '' };
           rows.push(`<tr data-key="${escapeHtml(key)}" data-size="${escapeHtml(size)}" data-colour="${escapeHtml(colour)}">
             <td>${escapeHtml(colour)}</td><td>${escapeHtml(size)}</td>
-            <td><input class="v_sku" maxlength="50" value="${escapeHtml(d.sku)}" placeholder="Qikink SKU" /></td>
-            <td><select class="v_pt"><option value="">Select</option>${PRINT_TYPE_OPTIONS.map((id) => `<option value="${id}" ${d.printTypeId === String(id) ? 'selected' : ''}>${id}</option>`).join('')}</select></td>
+            <td><input class="v_sku" maxlength="50" value="${escapeHtml(d.sku)}" placeholder="Store SKU" aria-label="Store SKU for ${escapeHtml(colour)} ${escapeHtml(size)}" /></td>
+            <td><input class="v_product_sku" maxlength="100" value="${escapeHtml(d.productSku)}" placeholder="Product SKU" aria-label="Product SKU for ${escapeHtml(colour)} ${escapeHtml(size)}" /></td>
+            <td><input class="v_design_sku" maxlength="100" value="${escapeHtml(d.designSku)}" placeholder="Design SKU" aria-label="Design SKU for ${escapeHtml(colour)} ${escapeHtml(size)}" /></td>
+            <td><input class="v_price" type="number" min="0.01" max="100000" step="0.01" value="${escapeHtml(d.qikinkPrice)}" placeholder="e.g. 305.48" aria-label="Product cost for ${escapeHtml(colour)} ${escapeHtml(size)}" /></td>
+            <td><button type="button" class="btn danger v_remove" aria-label="Remove ${escapeHtml(colour)} ${escapeHtml(size)}">Remove</button></td>
           </tr>`);
         }));
-        container.innerHTML = `<table><thead><tr><th>Colour</th><th>Size</th><th>Qikink SKU</th><th>Print type ID</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+        container.innerHTML = `<div style="overflow-x:auto"><table><thead><tr><th>Colour</th><th>Size</th><th>Store SKU</th><th>Product SKU</th><th>Design SKU</th><th>Product cost (₹)</th><th>Action</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>${removed.length ? `<div class="small muted" style="margin-top:8px">Removed variations: ${removed.join(' ')}</div>` : ''}`;
       };
       document.getElementById('p_sizes').addEventListener('input', render);
       document.getElementById('p_colours').addEventListener('input', render);
+      container.addEventListener('click', (event) => {
+        const remove = event.target.closest('.v_remove');
+        const restore = event.target.closest('.v_restore');
+        if (remove) {
+          snapshot();
+          excluded.add(remove.closest('tr').dataset.key);
+          render();
+        } else if (restore) {
+          excluded.delete(restore.dataset.key);
+          render();
+        }
+      });
+      document.getElementById('p_add_size').addEventListener('click', () => {
+        const newSize = document.getElementById('p_new_size');
+        const message = document.getElementById('p_size_message');
+        const sizesInput = document.getElementById('p_sizes');
+        const value = newSize.value.trim();
+        const sizes = csvList(sizesInput.value);
+        if (!value || value.includes(',')) {
+          message.textContent = 'Enter one size at a time.';
+          return;
+        }
+        if (sizes.some((size) => size.toLowerCase() === value.toLowerCase())) {
+          message.textContent = 'This size is already in the list.';
+          return;
+        }
+        if (sizes.length >= 50) {
+          message.textContent = 'A product can have at most 50 sizes.';
+          return;
+        }
+        sizesInput.value = [...sizes, value].join(', ');
+        render();
+        newSize.value = '';
+        message.textContent = `Added size ${value}.`;
+      });
       render();
-      return () => [...container.querySelectorAll('tr[data-key]')]
-        .map((row) => ({ size: row.dataset.size, colour: row.dataset.colour, sku: row.querySelector('.v_sku').value.trim(), printTypeId: row.querySelector('.v_pt').value }))
-        .filter((v) => v.sku && v.printTypeId)
-        .map((v) => ({ ...v, printTypeId: Number(v.printTypeId) }));
+      const collect = () => [...container.querySelectorAll('tr[data-key]')].flatMap((row) => {
+        const sku = row.querySelector('.v_sku').value.trim();
+        const productSku = row.querySelector('.v_product_sku').value.trim();
+        const designSku = row.querySelector('.v_design_sku').value.trim();
+        const printTypeId = (draft.get(row.dataset.key) || {}).printTypeId;
+        const priceInput = row.querySelector('.v_price');
+        const qikinkPrice = priceInput.value;
+        if (!sku && !productSku && !designSku && !qikinkPrice && priceInput.validity.valid) return [];
+        if (!sku) throw new Error(`Enter the Store SKU for ${row.dataset.colour} / ${row.dataset.size}.`);
+        if (!priceInput.validity.valid || (qikinkPrice && (!Number.isFinite(Number(qikinkPrice)) || Number(qikinkPrice) < 0.01 || Number(qikinkPrice) > 100000))) {
+          throw new Error(`Enter a valid Qikink price between 0.01 and 100000 for ${row.dataset.colour} / ${row.dataset.size}.`);
+        }
+        return [{ size: row.dataset.size, colour: row.dataset.colour, sku, ...(printTypeId === undefined ? {} : { printTypeId }), ...(productSku ? { productSku } : {}), ...(designSku ? { designSku } : {}), ...(qikinkPrice ? { qikinkPrice: Number(qikinkPrice) } : {}) }];
+      });
+      collect.excluded = () => csvList(document.getElementById('p_colours').value).flatMap((colourOption) => csvList(document.getElementById('p_sizes').value).flatMap((size) => {
+        const colour = colourOption.split('|')[0].trim();
+        return excluded.has(`${size.toLowerCase()}|${colour.toLowerCase()}`) ? [{ size, colour }] : [];
+      }));
+      return collect;
     }
 
     function readProductForm(){
@@ -716,6 +800,7 @@
         sizes: csvList(document.getElementById('p_sizes').value),
         colours: csvList(document.getElementById('p_colours').value),
         imageUrl: document.getElementById('p_imageUrl').value || null,
+        thumbnailUrl: document.getElementById('p_thumbnailUrl').value || null,
         imageFilename: document.getElementById('p_imageFilename').value || null,
         imageMime: document.getElementById('p_imageMime').value || null,
         imageSize: document.getElementById('p_imageSize').value || null
@@ -723,26 +808,63 @@
     }
 
     function bindProductImageUpload(){
-      const fileInput = document.getElementById('p_image_file');
-      const preview = document.getElementById('p_image_preview');
-      fileInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => { preview.src = reader.result; preview.style.display = 'block'; };
-        reader.readAsDataURL(file);
-        try {
-          const fd = new FormData(); fd.append('image', file); fd.append('folder', 'products');
-          const token = localStorage.getItem(tokenKey);
-          const res = await fetch('/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
-          const data = await res.json();
-          if (!res.ok) { document.getElementById('p_err').textContent = (data && data.error) || 'Upload failed'; return; }
-          document.getElementById('p_imageUrl').value = data.url;
-          document.getElementById('p_imageFilename').value = data.filename;
-          document.getElementById('p_imageMime').value = data.mimetype;
-          document.getElementById('p_imageSize').value = data.size;
-        } catch (err) { console.error(err); document.getElementById('p_err').textContent = 'Upload failed'; }
+      const inputs = [
+        { file: 'p_image_file', preview: 'p_image_preview', url: 'p_imageUrl', metadata: true },
+        { file: 'p_thumbnail_file', preview: 'p_thumbnail_preview', url: 'p_thumbnailUrl', metadata: false }
+      ];
+      let pending = 0;
+      const failures = new Set();
+      const errorElement = document.getElementById('p_err');
+      const updateUploadMessage = () => {
+        if (failures.size) errorElement.textContent = 'An image upload failed. Please select the image again before saving.';
+        else if (pending) errorElement.textContent = 'Uploading image...';
+        else errorElement.textContent = '';
+      };
+      inputs.forEach((input) => {
+        let sequence = 0;
+        const fileInput = document.getElementById(input.file);
+        const preview = document.getElementById(input.preview);
+        const urlInput = document.getElementById(input.url);
+        const filenameInput = document.getElementById('p_imageFilename');
+        const mimeInput = document.getElementById('p_imageMime');
+        const sizeInput = document.getElementById('p_imageSize');
+        fileInput.addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const current = ++sequence;
+          pending += 1;
+          failures.delete(input.file);
+          updateUploadMessage();
+          try {
+            const fd = new FormData(); fd.append('image', file); fd.append('folder', 'products');
+            const token = localStorage.getItem(tokenKey);
+            const res = await fetch('/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+            const data = await res.json();
+            if (!res.ok || !data.url) throw new Error((data && data.error) || 'Upload failed');
+            if (current !== sequence) return;
+            urlInput.value = data.url;
+            preview.src = data.url;
+            preview.style.display = 'block';
+            if (input.metadata) {
+              filenameInput.value = data.filename || '';
+              mimeInput.value = data.mimetype || '';
+              sizeInput.value = data.size || '';
+            }
+          } catch (err) {
+            console.error(err);
+            if (current === sequence) {
+              failures.add(input.file);
+            }
+          } finally {
+            pending -= 1;
+            updateUploadMessage();
+          }
+        });
       });
+      return () => {
+        if (pending) throw new Error('Please wait for image uploads to finish.');
+        if (failures.size) throw new Error('An image upload failed. Please select the image again before saving.');
+      };
     }
 
     async function renderProductAdd(){
@@ -758,11 +880,14 @@
         </div>`;
       document.getElementById('cancelProdBtn').addEventListener('click', ()=> navigate('/admin/products-list'));
       const collectVariants = mountVariantTable([]);
-      bindProductImageUpload();
+      const checkUploads = bindProductImageUpload();
       document.getElementById('saveProdBtn').addEventListener('click', async ()=>{
+        try { checkUploads(); } catch (error) { document.getElementById('p_err').textContent = error.message; return; }
         const form = readProductForm();
         if (!form.name || !Number.isFinite(form.price)) return document.getElementById('p_err').textContent = 'Name and a valid price are required';
-        const body = { ...form, qikinkVariants: collectVariants() };
+        let variants;
+        try { variants = collectVariants(); } catch (error) { document.getElementById('p_err').textContent = error.message; return; }
+        const body = { ...form, qikinkVariants: variants, qikinkExcludedVariants: collectVariants.excluded() };
         if (!body.category) delete body.category;
         const res = await api('/products', { method:'POST', body: JSON.stringify(body) });
         if (!res.ok) return document.getElementById('p_err').textContent = (res.body && res.body.error) || 'Failed';
@@ -806,12 +931,15 @@
       }
       document.getElementById('enableProdBtn').addEventListener('click', ()=> changeStatus('ENABLED'));
       document.getElementById('disableProdBtn').addEventListener('click', ()=> changeStatus('DISABLED'));
-      const collectVariants = mountVariantTable(p.qikinkVariants);
-      bindProductImageUpload();
+      const collectVariants = mountVariantTable(p.qikinkVariants, p.qikinkExcludedVariants);
+      const checkUploads = bindProductImageUpload();
       document.getElementById('saveProdBtn').addEventListener('click', async ()=>{
+        try { checkUploads(); } catch (error) { document.getElementById('p_err').textContent = error.message; return; }
         const form = readProductForm();
         if (!form.name || !Number.isFinite(form.price)) return document.getElementById('p_err').textContent = 'Name and a valid price are required';
-        const body = { ...form, qikinkVariants: collectVariants() };
+        let variants;
+        try { variants = collectVariants(); } catch (error) { document.getElementById('p_err').textContent = error.message; return; }
+        const body = { ...form, qikinkVariants: variants, qikinkExcludedVariants: collectVariants.excluded() };
         if (!body.category) delete body.category;
         const r = await api('/products/' + id, { method:'PUT', body: JSON.stringify(body) });
         if (!r.ok) return document.getElementById('p_err').textContent = (r.body && r.body.error) || 'Failed';

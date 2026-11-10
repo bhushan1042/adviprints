@@ -5,6 +5,7 @@ import { listCategories } from '../services/catalog';
 export default function useCatalogCategories() {
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -18,6 +19,9 @@ export default function useCatalogCategories() {
         if (!ignore && !isRequestAborted(requestError)) {
           setError(getErrorMessage(requestError, 'Unable to load categories.'));
         }
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
       });
 
     return () => {
@@ -26,5 +30,5 @@ export default function useCatalogCategories() {
     };
   }, []);
 
-  return { categories, error };
+  return { categories, error, loading };
 }

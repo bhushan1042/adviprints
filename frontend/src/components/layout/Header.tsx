@@ -8,9 +8,7 @@ import BrandLogo from '@/components/ui/BrandLogo';
 const navLinks = [
   { label: 'Home', to: '/' },
   { label: 'Shop', to: '/category/all', hasDropdown: true },
-  { label: 'How It Works', to: '/how-it-works' },
   { label: 'About', to: '/about' },
-  { label: 'FAQ', to: '/faq' },
   { label: 'Contact', to: '/contact' },
 ];
 
@@ -29,8 +27,8 @@ export default function Header() {
       {/* announcement bar */}
       <div className="bg-navy-900 text-white">
         <div className="container-px mx-auto flex max-w-7xl items-center justify-center py-2 text-center text-xs font-medium sm:text-sm">
-          <span className="text-orange-300">Custom t-shirts </span>
-          <span className="mx-1.5 text-navy-400">made your way</span>
+          <span className="text-orange-300">Find your favourites </span>
+          <span className="mx-1.5 text-navy-400">at Adviprints</span>
         </div>
       </div>
 
@@ -75,7 +73,7 @@ export default function Header() {
                         to="/category/all"
                         className="block rounded-lg px-4 py-2.5 text-sm font-semibold text-navy-700 transition-colors hover:bg-orange-50 hover:text-orange-600"
                       >
-                        All T-Shirts
+                        All Categories
                       </Link>
                       <div className="my-1 h-px bg-navy-100" />
                       {categories.map((cat) => (
@@ -142,7 +140,7 @@ export default function Header() {
                           onClick={() => setMobileOpen(false)}
                           className="rounded-lg px-4 py-2 text-sm font-medium text-navy-600 hover:text-orange-600"
                         >
-                          All T-Shirts
+                          All Categories
                         </Link>
                         {categories.map((cat) => (
                           <Link

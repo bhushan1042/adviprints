@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import Seo from '../seo/Seo';
 import { HOME_META, STATIC_PAGES, staticPageMeta } from '../seo/seoCore.mjs';
 
@@ -8,8 +8,6 @@ const Home = lazy(() => import('../pages/Home'));
 const Category = lazy(() => import('../pages/Category'));
 const ProductDetails = lazy(() => import('../pages/ProductDetails'));
 const About = lazy(() => import('../pages/About'));
-const HowItWorks = lazy(() => import('../pages/HowItWorks'));
-const FAQ = lazy(() => import('../pages/FAQ'));
 const Contact = lazy(() => import('../pages/Contact'));
 const CheckoutPage = lazy(() => import('../features/checkout/pages/CheckoutPage'));
 const CartPage = lazy(() => import('../features/checkout/pages/CartPage'));
@@ -48,11 +46,10 @@ const AppRoutes = () => {
         <Route element={<StorefrontLayout />}>
           <Route path="/" element={<><Seo {...HOME_META} /><Home /></>} />
           <Route path="/category/:slug" element={<Category />} />
+          <Route path="/shop" element={<Navigate to="/category/all" replace />} />
           <Route path="/product/:slug" element={<ProductDetails />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/about" element={<StaticPage path="/about"><About /></StaticPage>} />
-          <Route path="/how-it-works" element={<StaticPage path="/how-it-works"><HowItWorks /></StaticPage>} />
-          <Route path="/faq" element={<StaticPage path="/faq"><FAQ /></StaticPage>} />
           <Route path="/contact" element={<StaticPage path="/contact"><Contact /></StaticPage>} />
         </Route>
         <Route path="/checkout" element={<NoIndex title="Checkout"><CheckoutPage /></NoIndex>} />

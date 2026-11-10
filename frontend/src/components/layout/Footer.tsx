@@ -14,10 +14,10 @@ export default function Footer() {
           <div className="flex flex-col items-center justify-between gap-6 text-center md:flex-row md:text-left">
             <div>
               <h3 className="font-display text-2xl font-bold text-white">
-                Ready to order your t-shirt?
+                Ready to find your favourites?
               </h3>
               <p className="mt-1 text-navy-400">
-                Browse the catalog and customize a product to get started.
+                Browse the collection and choose the products you love.
               </p>
             </div>
             <Link
@@ -39,7 +39,7 @@ export default function Footer() {
               <BrandLogo size="md" className="max-w-[220px]" />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-navy-400">
-              Browse available products, customize your artwork, and continue through checkout.
+              Discover products you love and enjoy a straightforward checkout.
             </p>
             <div className="mt-5 flex gap-3">
               {[
@@ -65,7 +65,7 @@ export default function Footer() {
               Shop
             </h4>
             <ul className="mt-4 flex flex-col gap-2.5 text-sm">
-              <li><Link to="/category/all" className="transition-colors hover:text-orange-400">All T-Shirts</Link></li>
+              <li><Link to="/category/all" className="transition-colors hover:text-orange-400">All Categories</Link></li>
               {categories.slice(0, 4).map((cat) => (
                 <li key={cat.slug}>
                   <Link to={`/category/${cat.slug}`} className="transition-colors hover:text-orange-400">
@@ -84,8 +84,6 @@ export default function Footer() {
             </h4>
             <ul className="mt-4 flex flex-col gap-2.5 text-sm">
               <li><Link to="/about" className="transition-colors hover:text-orange-400">About Us</Link></li>
-              <li><Link to="/how-it-works" className="transition-colors hover:text-orange-400">How It Works</Link></li>
-              <li><Link to="/faq" className="transition-colors hover:text-orange-400">FAQ</Link></li>
               <li><Link to="/contact" className="transition-colors hover:text-orange-400">Contact</Link></li>
             </ul>
           </div>

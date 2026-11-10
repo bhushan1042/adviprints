@@ -4,11 +4,11 @@ export const faqData = [
     questions: [
       {
         q: 'How do I place an order?',
-        a: 'Choose a product from the live catalog, select an available size and colour, customize your artwork, then enter your delivery details at checkout.'
+        a: 'Choose a product, select its available options and quantity, and add it to your cart. Enter your delivery details and review your order at checkout.'
       },
       {
         q: 'Can I upload my own design?',
-        a: 'Yes. On a product page, choose a print layout and upload an image or add text in the customization studio. Review the preview before continuing to checkout.'
+        a: 'Our current shopping flow offers products with designs already selected. Uploading your own design is not available at checkout.'
       },
       {
         q: 'How is payment handled?',
@@ -17,15 +17,15 @@ export const faqData = [
     ]
   },
   {
-    category: 'Products & Customization',
+    category: 'Products & Options',
     questions: [
       {
         q: 'Which sizes and colours are available?',
         a: 'Available options are shown on each product page and come from the product catalog.'
       },
       {
-        q: 'Can I change my artwork before ordering?',
-        a: 'Yes. Use the editor controls to position, resize, and rotate artwork or text, then review your design before checkout.'
+        q: 'Where can I see product details?',
+        a: 'Open a product page to see its images, description, price, and available options.'
       }
     ]
   },

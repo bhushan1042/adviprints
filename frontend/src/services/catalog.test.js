@@ -32,4 +32,11 @@ describe('mapProduct', () => {
     ]);
     expect(product.sizes).toEqual(['S', 'M', 'L']);
   });
+
+  test('keeps the catalog thumbnail separate from detail images and falls back for older products', () => {
+    const product = mapProduct({ imageUrl: 'https://example.com/detail.jpg', thumbnailUrl: 'https://example.com/thumb.jpg' });
+    expect(product.thumbnail).toBe('https://example.com/thumb.jpg');
+    expect(product.images).toEqual(['https://example.com/detail.jpg']);
+    expect(mapProduct({ imageUrl: 'https://example.com/detail.jpg' }).thumbnail).toBe('https://example.com/detail.jpg');
+  });
 });

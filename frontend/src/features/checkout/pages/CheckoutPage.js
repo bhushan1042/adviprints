@@ -131,7 +131,7 @@ const CheckoutPage = () => {
             <h2>Unable to continue to checkout</h2>
             <p role="alert">{checkoutError}</p>
             <button className={styles.placeOrderBtn} onClick={() => navigate('/category/all')}>
-              Browse Products
+              Browse Categories
             </button>
           </div>
         </div>

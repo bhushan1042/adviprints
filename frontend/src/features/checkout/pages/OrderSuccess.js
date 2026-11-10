@@ -170,7 +170,7 @@ const OrderSuccess = () => {
                 <>
               <div className={styles.detailRow}>
                 <span className={styles.label}>Product</span>
-                <span className={styles.value}>{order.productName || 'Custom T-Shirt'}</span>
+                <span className={styles.value}>{order.productName || 'Product'}</span>
               </div>
               {order.size ? (
                 <div className={styles.detailRow}>

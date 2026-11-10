@@ -8,6 +8,7 @@ const colourName = (value) => {
 const sameText = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
 
 const findVariant = (product, size, colour) =>
+  (product.qikinkExcludedVariants || []).some((variant) => sameText(variant.size, size) && sameText(colourName(variant.colour), colourName(colour))) ? null :
   (product.qikinkVariants || []).find((variant) =>
     sameText(variant.size, size) && sameText(colourName(variant.colour), colourName(colour))
   ) || null;
@@ -18,6 +19,7 @@ const getApprovalProblems = (product) => {
   const sizes = product.sizes || [];
   const colours = product.colours || [];
   const variants = product.qikinkVariants || [];
+  const excluded = product.qikinkExcludedVariants || [];
 
   if (!product.name || !String(product.name).trim()) problems.push('Product title is required.');
   if (!Number.isFinite(Number(product.price)) || Number(product.price) <= 0) problems.push('A selling price greater than 0 is required.');
@@ -27,8 +29,14 @@ const getApprovalProblems = (product) => {
 
   for (const colour of colours) {
     for (const size of sizes) {
-      if (!findVariant(product, size, colour)) {
+      if (!excluded.some((item) => sameText(item.size, size) && sameText(colourName(item.colour), colourName(colour))) && !findVariant(product, size, colour)) {
         problems.push(`Missing Qikink SKU for ${colourName(colour)} / ${size}.`);
+      }
+    }
+    if (!variants.length) problems.push('At least one Qikink variation is required.');
+    for (const variant of variants) {
+      if (excluded.some((item) => sameText(item.size, variant.size) && sameText(colourName(item.colour), colourName(variant.colour)))) {
+        problems.push(`SKU ${variant.sku} belongs to a removed variation.`);
       }
     }
   }

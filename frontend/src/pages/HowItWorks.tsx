@@ -7,29 +7,29 @@ const steps = [
   {
     icon: Upload,
     num: '01',
-    title: 'Choose Your T-Shirt',
-    desc: 'Browse the available products and open the t-shirt you want to customize.',
+    title: 'Choose Your Product',
+    desc: 'Browse the collection and open a product you love.',
     color: 'orange',
   },
   {
     icon: Check,
     num: '02',
     title: 'Choose Your Options',
-    desc: 'Select an available size and colour, then set the quantity for your order.',
+    desc: 'Select from the available options and set your quantity.',
     color: 'navy',
   },
   {
     icon: Palette,
     num: '03',
-    title: 'Place and Edit Your Design',
-    desc: 'Choose a print area, upload your artwork, and position it in the design editor.',
+    title: 'Add to Your Cart',
+    desc: 'Add your selected product to the cart and keep shopping if you like.',
     color: 'orange',
   },
   {
     icon: Truck,
     num: '04',
-    title: 'Review and Continue',
-    desc: 'Check the design preview and your product options, then continue to checkout to place your order.',
+    title: 'Review and Order',
+    desc: 'Enter your delivery details, review your items, and place your order.',
     color: 'navy',
   },
 ];
@@ -46,14 +46,14 @@ export default function HowItWorks() {
         <div className="container-px relative mx-auto max-w-7xl py-16 lg:py-24">
           <div className="max-w-2xl">
             <span className="mb-4 inline-block text-sm font-bold uppercase tracking-widest text-orange-400">
-              From product to preview
+              From browsing to checkout
             </span>
             <h1 className="font-display text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
               How It
               <span className="block text-orange-500">Works</span>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-navy-200">
-              Choose a product, customize it with your artwork, and review your design before continuing to checkout.
+              Discover a product, choose its available options, and place your order in a few simple steps.
             </p>
           </div>
         </div>
@@ -73,23 +73,23 @@ export default function HowItWorks() {
         </div>
       </section>
 
-      {/* design tool showcase */}
+      {/* shopping overview */}
       <section className="bg-navy-50 py-16 lg:py-24">
         <div className="container-px mx-auto max-w-7xl">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <SectionHeading
-                eyebrow="Your Customization Flow"
-                title="Make the Design Yours"
-                subtitle="Use the original Adviprints design editor to place and adjust your artwork on the selected t-shirt."
+                eyebrow="Your Shopping Journey"
+                title="Find What You Love"
+                subtitle="Explore ready-designed products and select the options that work for you."
               />
               <div className="mt-6 space-y-4">
                 {[
-                  'Choose from the print areas available in the customization flow',
-                  'Upload your own artwork in the design editor',
-                  'Adjust and position your artwork before previewing it',
-                  'Review your selected product options with the design',
-                  'Continue to the existing checkout to submit your order',
+                  'Browse products and their photos',
+                  'Choose from the available options on the product page',
+                  'Select your quantity and add your choice to the cart',
+                  'Enter your delivery details at checkout',
+                  'Review your order before placing it',
                 ].map((f) => (
                   <div key={f} className="flex items-start gap-3">
                     <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-500">
@@ -101,7 +101,7 @@ export default function HowItWorks() {
               </div>
               <div className="mt-8">
                 <Button to="/category/all" size="lg" variant="primary">
-                  Shop All T-Shirts
+                  Shop All Categories
                   <ArrowRight size={20} />
                 </Button>
               </div>
@@ -109,13 +109,13 @@ export default function HowItWorks() {
 
             <div className="rounded-3xl bg-navy-900 p-6 text-white shadow-2xl shadow-navy-900/20 sm:p-8">
               <p className="text-sm font-bold uppercase tracking-widest text-orange-400">
-                Your design journey
+                Your shopping journey
               </p>
               <div className="mt-6 space-y-4">
                 {[
-                  { number: '01', title: 'Choose a print area', detail: 'Select centered or chest placement.' },
-                  { number: '02', title: 'Upload and adjust', detail: 'Position your artwork in the editor.' },
-                  { number: '03', title: 'Review the preview', detail: 'Check your design before checkout.' },
+                  { number: '01', title: 'Explore the collection', detail: 'Find a product you love.' },
+                  { number: '02', title: 'Choose your options', detail: 'Select available options and quantity.' },
+                  { number: '03', title: 'Review and order', detail: 'Check your cart and delivery details.' },
                 ].map((item) => (
                   <div key={item.number} className="flex items-center gap-4 rounded-2xl bg-white/10 p-4">
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500 font-display font-extrabold">
@@ -133,30 +133,30 @@ export default function HowItWorks() {
         </div>
       </section>
 
-      {/* customization steps */}
+      {/* shopping steps */}
       <section className="container-px mx-auto max-w-7xl py-16 lg:py-24">
         <SectionHeading
           center
-          eyebrow="Customize Your Product"
+          eyebrow="Shop Your Way"
           title="A Clear, Connected Flow"
-          subtitle="Your product choices lead directly into the original customization and preview experience."
+          subtitle="From product selection to checkout, each step is straightforward."
         />
         <div className="mt-12 grid gap-6 md:grid-cols-3">
           {[
             {
               name: 'Select Your Product',
-              desc: 'Start with a real product from the Adviprints catalog, then choose an available size, colour, and quantity.',
+              desc: 'Explore the Adviprints catalog and choose a product you love.',
               best: 'Product options',
             },
             {
-              name: 'Customize the Artwork',
-              desc: 'Choose a print area and use the design editor to upload, position, and adjust your artwork.',
-              best: 'Original design editor',
+              name: 'Choose Your Options',
+              desc: 'Select the available options and quantity, then add your product to the cart.',
+              best: 'Your selection',
             },
             {
-              name: 'Preview and Checkout',
-              desc: 'Review the customized design, then continue to the existing order checkout.',
-              best: 'Order handoff',
+              name: 'Review and Checkout',
+              desc: 'Enter your delivery details and review your order before placing it.',
+              best: 'Simple checkout',
             },
           ].map((m, i) => (
             <PrintMethod key={m.name} method={m} index={i} />
@@ -175,10 +175,10 @@ export default function HowItWorks() {
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { day: 'Product', title: 'Selected T-Shirt', desc: 'Confirm the product you chose from the catalog.' },
+              { day: 'Product', title: 'Your Selection', desc: 'Confirm the product you chose from the catalog.' },
               { day: 'Options', title: 'Size and Colour', desc: 'Check the available variant selected for your order.' },
               { day: 'Quantity', title: 'Order Amount', desc: 'Confirm how many items you want to order.' },
-              { day: 'Design', title: 'Artwork Preview', desc: 'Review your customized design before checkout.' },
+              { day: 'Delivery', title: 'Delivery Details', desc: 'Check your contact and delivery information.' },
             ].map((t, i) => (
               <div key={i} className="rounded-2xl border border-navy-700 bg-navy-800 p-5 text-center">
                 <span className="font-display text-sm font-bold text-orange-400">{t.day}</span>
@@ -193,10 +193,10 @@ export default function HowItWorks() {
       {/* CTA */}
       <section className="container-px mx-auto max-w-7xl py-16 text-center">
         <h2 className="font-display text-3xl font-bold text-navy-900 sm:text-4xl">
-          Ready to Customize a T-Shirt?
+          Ready to Find Your Favourites?
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-lg text-navy-500">
-          Browse the available products and start your design from the product page.
+          Browse the collection, choose your favourites, and place your order.
         </p>
         <div className="mt-8 flex justify-center">
           <Button to="/category/all" size="lg" variant="primary">

@@ -43,7 +43,7 @@ export default function Contact() {
               <span className="block text-orange-500">Touch</span>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-navy-200">
-              Questions about your order, custom designs, or bulk pricing? We would love to hear from you.
+              Questions about a product or an order? We would love to hear from you.
             </p>
           </div>
         </div>
@@ -53,7 +53,7 @@ export default function Contact() {
       <section className="container-px mx-auto max-w-7xl py-16">
         <div className="grid gap-6 sm:grid-cols-2">
           {[
-            { icon: Mail, title: 'Email Support', value: 'support@adviprints.com', desc: 'Order and customization enquiries' },
+            { icon: Mail, title: 'Email Support', value: 'support@adviprints.com', desc: 'Product and order enquiries' },
             { icon: Clock, title: 'Order Enquiries', value: 'Include your order ID', desc: 'This helps us identify your order.' },
           ].map((c, i) => (
             <ContactCard key={i} info={c} index={i} />
@@ -87,7 +87,7 @@ export default function Contact() {
                   >
                     <option value="">Select a topic...</option>
                     <option value="order">Order Enquiry</option>
-                    <option value="custom">Custom Design Help</option>
+                    <option value="product">Product Enquiry</option>
                     <option value="bulk">Bulk / Team Orders</option>
                     <option value="returns">Returns & Refunds</option>
                     <option value="other">Other</option>
@@ -125,7 +125,7 @@ export default function Contact() {
             <div className="rounded-3xl bg-navy-900 p-6 text-white lg:p-8">
               <h3 className="font-display text-xl font-bold">Contact Support</h3>
               <p className="mt-2 text-sm text-navy-200">
-For questions about products, customization, or an existing order, email our support team.
+                For questions about products or an existing order, email our support team.
               </p>
               <div className="mt-5 space-y-3 text-sm">
                 <div className="flex items-center gap-3">

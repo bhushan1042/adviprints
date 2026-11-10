@@ -34,6 +34,17 @@ test('product cannot be enabled until every SKU has a Qikink price', () => {
   assert.ok(getApprovalProblems(product).some((problem) => problem.includes('verified-black-s') && problem.includes('price')));
 });
 
+test('explicitly removed combinations are not orderable and do not block approval', () => {
+  const product = readyProduct();
+  product.qikinkVariants.pop();
+  product.qikinkExcludedVariants = [{ size: 'M', colour: 'White' }];
+  assert.deepEqual(getApprovalProblems(product), []);
+  assert.equal(findVariant(product, 'M', 'White'), null);
+  assert.ok(findVariant(product, 'M', 'Black'));
+  product.qikinkVariants = [];
+  assert.ok(getApprovalProblems(product).some((problem) => problem.includes('At least one Qikink variation')));
+});
+
 test('invalid product information prevents approval', () => {
   const product = readyProduct();
   product.imageUrl = '';

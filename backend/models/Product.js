@@ -7,6 +7,7 @@ const productSchema = new mongoose.Schema({
   stock: Number,
   // image fields: store public URL and metadata
   imageUrl: String,
+  thumbnailUrl: String,
   imageFilename: String,
   imageMime: String,
   imageSize: Number,
@@ -23,10 +24,16 @@ const productSchema = new mongoose.Schema({
       size: { type: String, required: true, trim: true },
       colour: { type: String, required: true, trim: true },
       sku: { type: String, required: true, trim: true, maxlength: 50 },
-      printTypeId: { type: Number, required: true, enum: [1, 2, 3, 5, 6, 7, 12, 13, 14, 15, 17, 23] },
+      printTypeId: { type: Number, enum: [1, 2, 3, 5, 6, 7, 12, 13, 14, 15, 17, 23] },
+      productSku: { type: String, trim: true, maxlength: 100 },
+      designSku: { type: String, trim: true, maxlength: 100 },
       // Qikink line-item price (the product price Qikink bills), sent as a string in create-order.
       qikinkPrice: { type: Number, min: 0.01, max: 100000 }
     }],
+    default: []
+  },
+  qikinkExcludedVariants: {
+    type: [{ size: { type: String, required: true, trim: true }, colour: { type: String, required: true, trim: true } }],
     default: []
   },
   // unique product code for printing/identification

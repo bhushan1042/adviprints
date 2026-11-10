@@ -25,7 +25,7 @@ export default function FAQ() {
               <span className="block text-orange-500">Questions</span>
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-navy-200">
-              Everything you need to know about ordering, printing, shipping, and caring for your custom t-shirts.
+              Find answers about our products, ordering, payment, and getting help.
             </p>
           </div>
         </div>

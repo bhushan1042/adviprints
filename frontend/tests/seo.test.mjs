@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   SITE_URL, canonicalUrl, categoryMeta, escapeXml, injectHeadBlock, normalizePath,
-  productMeta, renderSitemap, serializeJsonLd, staticPageMeta, STATIC_PAGES, HOME_META, truncate
+  productMeta, renderSitemap, serializeJsonLd, staticPageMeta, STATIC_PAGES, HOME_META, CATEGORIES_META, truncate
 } from '../src/seo/seoCore.mjs';
 import { prerender } from '../scripts/prerender.mjs';
 
@@ -39,6 +39,20 @@ test('static pages have unique titles and descriptions', () => {
   const metas = [HOME_META, ...STATIC_PAGES.map(staticPageMeta)];
   assert.equal(new Set(metas.map((m) => m.title)).size, metas.length);
   assert.equal(new Set(metas.map((m) => m.description)).size, metas.length);
+});
+
+test('default storefront metadata describes shopping rather than customization', () => {
+  const metas = [
+    HOME_META,
+    CATEGORIES_META,
+    ...STATIC_PAGES.map(staticPageMeta),
+    categoryMeta({ name: 'Mugs', slug: 'mugs' }),
+    productMeta({ _id: ID1, name: 'Mug' }, null)
+  ];
+  for (const meta of metas) {
+    assert.doesNotMatch(`${meta.title} ${meta.description}`, /customi[sz]|upload|your own design|t-shirts?/i);
+  }
+  assert.match(CATEGORIES_META.title, /categories/i);
 });
 
 test('product meta uses real data only', () => {
@@ -92,13 +106,24 @@ test('prerender writes per-route pages, skips empty categories and builds the si
   assert.match(productHtml, /"@type":"Product"/);
   const catHtml = await fs.readFile(path.join(dir, 'category', 'polo-t-shirts', 'index.html'), 'utf8');
   assert.ok(catHtml.includes('Polos &amp; &lt;more&gt;'));
+  const shopHtml = await fs.readFile(path.join(dir, 'category', 'all', 'index.html'), 'utf8');
+  assert.match(shopHtml, /<h1>All Categories<\/h1>/);
+  assert.ok(shopHtml.includes('href="/category/polo-t-shirts"'));
+  assert.ok(!shopHtml.includes(`href="/product/${ID1}"`));
+  assert.doesNotMatch(shopHtml, /custom T-shirts|All T-shirts/i);
+  assert.ok(!shopHtml.includes('href="/shop"'));
+  await assert.rejects(fs.access(path.join(dir, 'shop', 'index.html')));
   await assert.rejects(fs.access(path.join(dir, 'category', 'empty', 'index.html')));
   const sitemap = await fs.readFile(path.join(dir, 'sitemap.xml'), 'utf8');
   assert.ok(sitemap.includes(`${SITE_URL}/product/${ID1}`));
+  assert.ok(!sitemap.includes(`${SITE_URL}/shop`));
+  assert.ok(!sitemap.includes('/how-it-works') && !sitemap.includes('/faq'));
+  await assert.rejects(fs.access(path.join(dir, 'how-it-works', 'index.html')));
+  await assert.rejects(fs.access(path.join(dir, 'faq', 'index.html')));
   assert.ok(!sitemap.includes('/category/empty'));
   assert.ok(!sitemap.includes('/admin') && !sitemap.includes('/checkout'));
   const titles = new Set();
-  for (const file of ['about', 'faq', `product/${ID1}`, `product/${ID2}`]) {
+  for (const file of ['about', 'contact', `product/${ID1}`, `product/${ID2}`]) {
     titles.add((await fs.readFile(path.join(dir, file, 'index.html'), 'utf8')).match(/<title>(.*?)<\/title>/)[1]);
   }
   assert.equal(titles.size, 4);
@@ -121,4 +146,9 @@ test('robots.txt allows crawling and references the sitemap', async () => {
   assert.match(robots, /User-agent: \*/);
   assert.match(robots, /Sitemap: https:\/\/adviprints\.com\/sitemap\.xml/);
   assert.ok(!/^Disallow:\s*\/\s*$/m.test(robots));
+});
+
+test('fallback sitemap excludes removed pages', async () => {
+  const sitemap = await fs.readFile(new URL('../public/sitemap.xml', import.meta.url), 'utf8');
+  assert.ok(!sitemap.includes('/how-it-works') && !sitemap.includes('/faq'));
 });

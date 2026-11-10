@@ -114,6 +114,10 @@ export default function ProductDetails() {
     : 0;
 
   const selectedColour = product?.colors[selectedColor]?.name || '';
+  const isAvailable = (size: string, colour: string) => !Array.isArray(product?.availableVariations) ||
+    product.availableVariations.some((variant: { size: string; colour: string }) =>
+      variant.size.trim().toLowerCase() === size.trim().toLowerCase() &&
+      variant.colour.split('|')[0].trim().toLowerCase() === colour.trim().toLowerCase());
 
   const addToCart = () => {
     if (product?.sizes.length && !selectedSize) {
@@ -122,6 +126,10 @@ export default function ProductDetails() {
     }
     if (product?.colors.length && !selectedColour) {
       setSelectionError('Please select a colour to continue.');
+      return;
+    }
+    if (selectedSize && !isAvailable(selectedSize, selectedColour)) {
+      setSelectionError('This size is not available in the selected colour.');
       return;
     }
     const colour = product.colors[selectedColor]?.name || '';
@@ -179,7 +187,7 @@ export default function ProductDetails() {
       <div role="alert" className="container-px mx-auto max-w-7xl py-20 text-center text-error-600">
         <Seo title="Product not found" description="This product could not be found." noindex />
         {loadError || 'Product not found.'}
-        <div className="mt-5"><Button to="/category/all" variant="outline">Browse products</Button></div>
+        <div className="mt-5"><Button to="/category/all" variant="outline">Browse categories</Button></div>
       </div>
     );
   }
@@ -255,15 +263,6 @@ export default function ProductDetails() {
               {product.name}
             </h1>
 
-            <div className="mt-3 flex items-center gap-3">
-              <StarRating
-                rating={reviews.length ? reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / reviews.length : product.rating}
-                size="md"
-                showNumber
-                reviewCount={reviews.length || product.reviewCount}
-              />
-            </div>
-
             {/* price */}
             <div className="mt-5 flex items-baseline gap-3">
               <span className="font-display text-3xl font-extrabold text-navy-900">
@@ -295,7 +294,7 @@ export default function ProductDetails() {
                   {product.colors.map((c, i) => (
                     <button
                       key={c.name}
-                      onClick={() => { setSelectedColor(i); setSelectionError(''); }}
+                      onClick={() => { setSelectedColor(i); if (selectedSize && !isAvailable(selectedSize, c.name)) setSelectedSize(null); setSelectionError(''); }}
                       title={c.name}
                       className={`relative h-10 w-10 rounded-full border-2 transition-all ${
                         selectedColor === i ? 'border-orange-500 ring-2 ring-orange-200' : 'border-navy-200 hover:border-navy-400'
@@ -326,8 +325,9 @@ export default function ProductDetails() {
                 {product.sizes.map((s) => (
                   <button
                     key={s}
+                    disabled={!isAvailable(s, selectedColour)}
                     onClick={() => { setSelectedSize(s); setSelectionError(''); }}
-                    className={`min-w-[3rem] rounded-xl border-2 px-4 py-2.5 font-display text-sm font-bold transition-all ${
+                    className={`min-w-[3rem] rounded-xl border-2 px-4 py-2.5 font-display text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
                       selectedSize === s
                         ? 'border-orange-500 bg-orange-500 text-white'
                         : 'border-navy-200 text-navy-700 hover:border-orange-400'
@@ -418,8 +418,8 @@ export default function ProductDetails() {
           <div className="container-px mx-auto max-w-7xl">
             <SectionHeading
               eyebrow="You May Also Like"
-              title="Related T-Shirts"
-              subtitle="More t-shirts from the same category."
+              title="Related Products"
+              subtitle="More products from the same category."
             />
             {relatedError ? <p role="alert" className="text-sm text-error-600">{relatedError}</p> : null}
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

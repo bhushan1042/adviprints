@@ -230,6 +230,38 @@
   line-height: 1.5;
 }
 
+.variantTable {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.addSize {
+  display: flex;
+  gap: 8px;
+}
+
+.addSize button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.variantTable table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.variantTable th,
+.variantTable td {
+  padding: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.variantTable input {
+  min-width: 140px;
+}
+
 .mappingField textarea {
   width: 100%;
   min-height: 112px;

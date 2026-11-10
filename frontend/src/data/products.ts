@@ -10,6 +10,7 @@ export interface Product {
   colors: { name: string; hex: string }[];
   sizes: string[];
   images: string[];
+  thumbnail?: string;
   rating: number;
   reviewCount: number;
   description: string;

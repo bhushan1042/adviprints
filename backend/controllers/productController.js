@@ -6,10 +6,27 @@ const { colourName, sameText, getApprovalProblems } = require('../utils/productV
 const { toPublicProduct } = require('../utils/publicProductView');
 const ALLOWED_PRINT_TYPES = new Set([1, 2, 3, 5, 6, 7, 12, 13, 14, 15, 17, 23]);
 const PUBLIC_FILTER = { status: 'ENABLED' };
-const VARIANT_ERROR = 'Qikink variants must contain unique size/colour combinations and SKUs, a SKU up to 50 characters, and a documented integer print type ID.';
+const VARIANT_ERROR = 'Qikink variants must have unique size/colour combinations and store SKUs, a store SKU up to 50 characters, optional product and design SKUs up to 100 characters, and an optional Qikink price between 0.01 and 100000.';
 
 // productCode, status and createdAt are system-managed. Any edit returns the product to PENDING for re-approval.
-const UPDATABLE_FIELDS = ['name', 'category', 'price', 'stock', 'imageUrl', 'imageFilename', 'imageMime', 'imageSize', 'images', 'description', 'colours', 'sizes', 'qikinkVariants'];
+const UPDATABLE_FIELDS = ['name', 'category', 'price', 'stock', 'imageUrl', 'thumbnailUrl', 'imageFilename', 'imageMime', 'imageSize', 'images', 'description', 'colours', 'sizes', 'qikinkVariants', 'qikinkExcludedVariants'];
+
+const normalizeExcludedVariants = (value) => {
+  if (!Array.isArray(value) || value.length > 2500) return null;
+  const seen = new Set();
+  const result = [];
+  for (const item of value) {
+    if (!item || typeof item.size !== 'string' || typeof item.colour !== 'string') return null;
+    const size = item.size.trim();
+    const colour = colourName(item.colour);
+    if (!size || !colour || size.length > 100 || colour.length > 100) return null;
+    const key = `${size.toLowerCase()}\u0000${colour.toLowerCase()}`;
+    if (seen.has(key)) return null;
+    seen.add(key);
+    result.push({ size, colour });
+  }
+  return result;
+};
 
 const cleanStringList = (value) => Array.isArray(value)
   ? [...new Set(value.filter((item) => typeof item === 'string').map((item) => item.trim()).filter(Boolean))].slice(0, 50)
@@ -26,7 +43,10 @@ const normalizeQikinkVariants = (value) => {
     const colour = typeof item.colour === 'string' ? item.colour.trim() : '';
     const sku = typeof item.sku === 'string' ? item.sku.trim() : '';
     const printTypeId = item.printTypeId;
-    if (!size || !colour || !sku || sku.length > 50 || !ALLOWED_PRINT_TYPES.has(printTypeId)) return null;
+    if (!size || !colour || !sku || sku.length > 50 || (printTypeId !== undefined && !ALLOWED_PRINT_TYPES.has(printTypeId))) return null;
+    const productSku = item.productSku === undefined ? '' : typeof item.productSku === 'string' ? item.productSku.trim() : null;
+    const designSku = item.designSku === undefined ? '' : typeof item.designSku === 'string' ? item.designSku.trim() : null;
+    if (productSku === null || designSku === null || productSku.length > 100 || designSku.length > 100) return null;
     const qikinkPrice = item.qikinkPrice === undefined || item.qikinkPrice === null || item.qikinkPrice === ''
       ? undefined
       : Number(item.qikinkPrice);
@@ -35,7 +55,13 @@ const normalizeQikinkVariants = (value) => {
     if (seen.has(key) || seenSkus.has(sku.toLowerCase())) return null;
     seen.add(key);
     seenSkus.add(sku.toLowerCase());
-    variants.push(qikinkPrice === undefined ? { size, colour, sku, printTypeId } : { size, colour, sku, printTypeId, qikinkPrice });
+    variants.push({
+      size, colour, sku,
+      ...(printTypeId === undefined ? {} : { printTypeId }),
+      ...(qikinkPrice === undefined ? {} : { qikinkPrice }),
+      ...(productSku ? { productSku } : {}),
+      ...(designSku ? { designSku } : {})
+    });
   }
   return variants;
 };
@@ -172,7 +198,7 @@ const getProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const product = await Product.findOne({ _id: id, ...PUBLIC_FILTER })
-      .select('-qikinkVariants -qikinkSku -qikinkPrintTypeId -qikinkFulfillment -fulfillment -fulfilment');
+      .select('-qikinkSku -qikinkPrintTypeId -qikinkFulfillment -fulfillment -fulfilment');
     if (!product) return res.status(404).json({ error: 'Product not found' });
     res.json(toPublicProduct(product));
   } catch (error) {
@@ -224,7 +250,7 @@ const setProductStatus = async (req, res) => {
 // Create product (always starts as PENDING)
 const createProduct = async (req, res) => {
   try {
-    const { name, category, price, stock, imageUrl, imageFilename, imageMime, imageSize, description, colours, sizes, images, qikinkVariants } = req.body;
+    const { name, category, price, stock, imageUrl, thumbnailUrl, imageFilename, imageMime, imageSize, description, colours, sizes, images, qikinkVariants, qikinkExcludedVariants } = req.body;
 
     const parsedPrice = parsePrice(price);
     if (!name || !String(name).trim() || parsedPrice === null) {
@@ -241,6 +267,8 @@ const createProduct = async (req, res) => {
     const cleanSizes = cleanStringList(sizes);
     const cleanColours = cleanStringList(colours);
     let variants = [];
+    const excluded = normalizeExcludedVariants(qikinkExcludedVariants === undefined ? [] : qikinkExcludedVariants);
+    if (!excluded || !matchesProductVariants(excluded, cleanSizes, cleanColours)) return res.status(400).json({ error: 'Excluded variations must match configured sizes and colours.' });
     if (qikinkVariants !== undefined) {
       variants = normalizeQikinkVariants(qikinkVariants);
       if (!variants) return res.status(400).json({ error: VARIANT_ERROR });
@@ -263,7 +291,9 @@ const createProduct = async (req, res) => {
       colours: cleanColours,
       sizes: cleanSizes,
       images: cleanStringList(images).slice(0, 10),
+      thumbnailUrl,
       qikinkVariants: variants,
+      qikinkExcludedVariants: excluded,
       status: 'PENDING'
     };
     if (imageUrl) {
@@ -314,6 +344,16 @@ const updateProduct = async (req, res) => {
       const colours = updates.colours || currentProduct.colours || [];
       if (!matchesProductVariants(variants, sizes, colours)) {
         return res.status(400).json({ error: 'Each Qikink mapping must match a configured product size and colour.' });
+      }
+      if (updates.qikinkExcludedVariants !== undefined) {
+        const excluded = normalizeExcludedVariants(updates.qikinkExcludedVariants);
+        if (!excluded) return res.status(400).json({ error: 'Invalid excluded variations.' });
+        const currentProduct = await Product.findById(id).select('sizes colours').lean();
+        if (!currentProduct) return res.status(404).json({ error: 'Product not found' });
+        if (!matchesProductVariants(excluded, updates.sizes || currentProduct.sizes || [], updates.colours || currentProduct.colours || [])) {
+          return res.status(400).json({ error: 'Excluded variations must match configured sizes and colours.' });
+        }
+        updates.qikinkExcludedVariants = excluded;
       }
       updates.qikinkVariants = variants;
     }

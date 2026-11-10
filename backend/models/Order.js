@@ -45,7 +45,7 @@ const orderSchema = new mongoose.Schema({
       size: String,
       colour: String,
       qikinkSku: { type: String, required: true },
-      qikinkPrintTypeId: { type: Number, required: true },
+      qikinkPrintTypeId: Number,
       qikinkPrice: Number,
       quantity: { type: Number, required: true },
       totalPrice: { type: Number, required: true }

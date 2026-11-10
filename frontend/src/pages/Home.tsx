@@ -1,26 +1,26 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import type { Category } from '@/data/products';
 import categoryPlaceholder from '@/assets/placeholders/category-placeholder.png';
 import {
   ArrowRight, Truck, ShieldCheck, RefreshCw, IndianRupee,
-  MousePointerClick, Palette, ShoppingBag, PackageCheck,
-  ChevronDown, Sparkles,
+  MousePointerClick, ShoppingBag, PackageCheck, SlidersHorizontal,
+  Shirt, HeartHandshake, ChevronDown, Sparkles,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import SectionHeading from '@/components/ui/SectionHeading';
+import CategoryCarousel from '@/components/home/CategoryCarousel';
 import useCatalogCategories from '@/hooks/useCatalogCategories';
 import { useReveal } from '@/hooks/useReveal';
 import { applyImageFallback } from '@/utils/images';
+import homeSections from '@/components/home/HomeSections.module.css';
 
 const homeFaqs = [
   {
-    q: 'Can I customise my t-shirt with my own design?',
-    a: 'Yes. Choose a product, select a print area, and upload an image in the design editor.',
+    q: 'How do I place an order?',
+    a: 'Choose a product, select the available options and quantity, and add it to your cart before checkout.',
   },
   {
-    q: 'Can I review the design before ordering?',
-    a: 'Yes. The customization flow shows a preview before you continue to checkout.',
+    q: 'Can I review my order before placing it?',
+    a: 'Yes. You can review your selected items and delivery details before placing your order.',
   },
   {
     q: 'How do I ask about delivery?',
@@ -51,18 +51,18 @@ export default function Home() {
           <div className="grid items-center gap-10 py-12 lg:grid-cols-2 lg:py-20">
             <div className="animate-fade-up">
               <h1 className="font-display text-4xl font-extrabold leading-[1.15] tracking-tight sm:text-5xl lg:text-6xl">
-                Custom T-Shirts,
-                <span className="block text-orange-500">Made Simple</span>
+                Fresh prints,
+                <span className="block text-orange-500">For your daily grind</span>
               </h1>
               <p className="mt-5 max-w-lg text-lg leading-relaxed text-navy-200">
-                Browse the live catalog, choose your product options, and create a custom design before checkout.
+                Explore our collection, choose your favourite products and available options, and order with ease.
               </p>
               <div className="mt-7 flex flex-wrap gap-4">
                 <Button to="/category/all" size="lg" variant="primary">
-                  Shop All T-Shirts
+                  Shop All Categories
                   <ArrowRight size={20} />
                 </Button>
-                <Button to="/how-it-works" size="lg" variant="outline" className="border-white/30 text-white hover:border-orange-400 hover:text-orange-400">
+                <Button href="#how-it-works" size="lg" variant="outline" className="border-white/30 text-white hover:border-orange-400 hover:text-orange-400">
                   How It Works
                 </Button>
               </div>
@@ -72,7 +72,7 @@ export default function Home() {
               <div className="overflow-hidden rounded-3xl">
                 <img
                   src="https://images.pexels.com/photos/2451200/pexels-photo-2451200.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
-                  alt="Custom printed t-shirt"
+                  alt="Printed t-shirt"
                   className="w-full object-cover"
                   onError={(event) => applyImageFallback(event, categoryPlaceholder)}
                 />
@@ -87,7 +87,7 @@ export default function Home() {
         <div className="container-px mx-auto max-w-7xl py-6">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {[
-              { icon: Truck, title: 'Order Handoff', desc: 'Review your design before checkout' },
+              { icon: Truck, title: 'Simple Ordering', desc: 'Review your items before checkout' },
               { icon: RefreshCw, title: 'Order Support', desc: 'Help with your order' },
               { icon: ShieldCheck, title: 'Product Details', desc: 'Options shown on each product page' },
               { icon: IndianRupee, title: 'Cash on Delivery', desc: 'No online payment collection' },
@@ -106,9 +106,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CATEGORIES — large image cards */}
+      {/* CATEGORIES */}
       <section className="bg-white py-14 lg:py-20">
-        <div className="container-px mx-auto max-w-7xl">
+        <div className="container-px mx-auto max-w-[1600px]">
           <SectionHeading
             center
             eyebrow="Choose Your Style"
@@ -116,47 +116,35 @@ export default function Home() {
             subtitle="Browse the categories and products currently available in the Adviprints catalog."
           />
 
-          {/* first 4 categories — large 2x2 grid */}
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-            {categories.slice(0, 4).map((cat, i) => (
-              <CategoryCardLarge key={cat.slug} category={cat} index={i} />
-            ))}
-          </div>
+          <CategoryCarousel categories={categories} />
           {categoriesError && (
             <p role="alert" className="mt-6 text-center text-sm text-error-600">{categoriesError}</p>
           )}
-
-          {/* last category — full width banner */}
-          <div className="mt-5">
-            {categories.slice(4).map((cat, i) => (
-              <CategoryCardWide key={cat.slug} category={cat} index={i} />
-            ))}
-          </div>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="bg-navy-50 py-14 lg:py-20">
+      <section id="how-it-works" className={`${homeSections.howSection} scroll-mt-24 py-14 lg:py-20`}>
         <div className="container-px mx-auto max-w-7xl">
           <SectionHeading
             center
             eyebrow="Simple Process"
             title="How It Works"
-            subtitle="Choose a product, customize your artwork, and review it before checkout."
+            subtitle="Find something you love and make it yours in just a few easy steps."
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { icon: MousePointerClick, num: '01', title: 'Choose Your T-Shirt', desc: 'Browse categories and select a real catalog product.' },
-              { icon: ShoppingBag, num: '02', title: 'Choose Your Options', desc: 'Select a configured size, colour, and quantity.' },
-              { icon: Palette, num: '03', title: 'Customize Your Design', desc: 'Choose a print area and upload and position your artwork.' },
-              { icon: PackageCheck, num: '04', title: 'Review and Checkout', desc: 'Preview your design and continue to the existing checkout.' },
+              { icon: MousePointerClick, title: 'Find Your Favourite', desc: 'Explore the collection and pick a product you love.' },
+              { icon: SlidersHorizontal, title: 'Pick Your Fit', desc: 'Choose an available size, colour, and quantity.' },
+              { icon: ShoppingBag, title: 'Add to Your Cart', desc: 'Keep shopping or head to your cart when you’re ready.' },
+              { icon: PackageCheck, title: 'Place Your Order', desc: 'Enter your delivery details, review your order, and check out.' },
             ].map((step, i) => (
-              <HowItWorksCard key={step.num} step={step} index={i} />
+              <HowItWorksCard key={step.title} step={step} index={i} />
             ))}
           </div>
           <div className="mt-10 text-center">
-            <Button to="/how-it-works" variant="outline" size="md">
-              Learn More
+            <Button to="/category/all" variant="outline" size="md">
+              Explore Categories
               <ArrowRight size={18} />
             </Button>
           </div>
@@ -164,20 +152,20 @@ export default function Home() {
       </section>
 
       {/* WHY CHOOSE ADVIPRINTS */}
-      <section className="bg-white py-14 lg:py-20">
+      <section className={`${homeSections.whySection} py-14 lg:py-20`}>
         <div className="container-px mx-auto max-w-7xl">
           <SectionHeading
             center
             eyebrow="Why Adviprints"
             title="Why Choose Adviprints"
-            subtitle="A connected catalog, customization studio, and order checkout."
+            subtitle="Thoughtful choices and a simple shopping experience, from browsing to checkout."
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { icon: ShieldCheck, title: 'Live Catalog', desc: 'Products and categories are loaded from Adviprints.' },
-              { icon: Palette, title: 'Design Editor', desc: 'Upload and position artwork on the selected product.' },
-              { icon: Truck, title: 'Order Handoff', desc: 'Your selected options continue to checkout.' },
-              { icon: ShieldCheck, title: 'Cash on Delivery', desc: 'The current checkout does not collect online payments.' },
+              { icon: Shirt, title: 'Find Your Style', desc: 'Browse our collection and discover a product that feels like you.' },
+              { icon: SlidersHorizontal, title: 'Your Size & Colour', desc: 'Choose from the options available on each product.' },
+              { icon: IndianRupee, title: 'Cash on Delivery', desc: 'Place your order now and pay when it’s delivered.' },
+              { icon: HeartHandshake, title: 'Here to Help', desc: 'Have a question about your order? Get in touch with us.' },
             ].map((item, i) => (
               <WhyChooseCard key={item.title} item={item} index={i} />
             ))}
@@ -185,7 +173,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CUSTOM T-SHIRT CTA BANNER */}
+      {/* PRODUCT COLLECTION CTA BANNER */}
       <section className="relative overflow-hidden bg-navy-900 py-16 lg:py-24">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -left-20 top-1/4 h-72 w-72 rounded-full bg-orange-500/20 blur-3xl" />
@@ -196,17 +184,17 @@ export default function Home() {
             <div>
               <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm font-medium text-orange-300">
                 <Sparkles size={16} />
-                Make It Your Own
+                Find Your Favourite
               </span>
               <h2 className="font-display text-3xl font-bold leading-tight text-white sm:text-4xl">
-                Create Your Custom T-Shirt
+                Find Something That Feels Like You
               </h2>
               <p className="mt-4 max-w-lg text-lg leading-relaxed text-navy-200">
-                Choose a product, upload your artwork, and review the customized design before checkout.
+                Explore our collection, pick your favourites, and choose from the available options.
               </p>
               <div className="mt-8">
                 <Button to="/category/all" size="lg" variant="primary">
-                  Create Your T-Shirt
+                  Explore the Collection
                   <ArrowRight size={20} />
                 </Button>
               </div>
@@ -215,7 +203,7 @@ export default function Home() {
               <div className="overflow-hidden rounded-3xl shadow-2xl shadow-black/30">
                 <img
                   src="https://images.pexels.com/photos/27893067/pexels-photo-27893067.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
-                  alt="Custom t-shirt printing"
+                  alt="Printed t-shirt"
                   className="w-full object-cover"
                   onError={(event) => applyImageFallback(event, categoryPlaceholder)}
                 />
@@ -225,34 +213,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="bg-white py-14 lg:py-20">
-        <div className="container-px mx-auto max-w-3xl">
-          <SectionHeading
-            center
-            eyebrow="Common Questions"
-            title="Frequently Asked Questions"
-            subtitle="Answers to questions about customization, printing, delivery, and more."
-          />
-          <div className="mt-10 space-y-3">
-            {homeFaqs.map((faq, i) => (
-              <FaqRow key={i} faq={faq} index={i} />
-            ))}
-          </div>
-          <div className="mt-10 text-center">
-            <Button to="/faq" variant="outline" size="md">
-              View All FAQs
-              <ArrowRight size={18} />
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {/* SIMPLE CTA */}
       <section className="bg-navy-50 py-14 lg:py-20">
         <div className="container-px mx-auto max-w-7xl text-center">
           <h2 className="font-display text-3xl font-bold text-navy-900 sm:text-4xl">
-            Ready to Order Your T-Shirt?
+            Ready to Find Your Favourites?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-navy-500">
             Browse all styles, choose your favourite, and get it delivered to your door.
@@ -269,99 +234,20 @@ export default function Home() {
   );
 }
 
-/* — Category card: large image with overlay — */
-function CategoryCardLarge({ category, index }: { category: Category; index: number }) {
-  const { ref, visible } = useReveal<HTMLAnchorElement>();
-  return (
-    <Link
-      to={`/category/${category.slug}`}
-      ref={ref}
-      className={`reveal ${visible ? 'is-visible' : ''} group relative block overflow-hidden rounded-2xl bg-navy-900 transition-transform duration-300 hover:-rotate-[0.4deg] hover:shadow-xl hover:shadow-navy-900/15`}
-      style={{ transitionDelay: `${index * 80}ms` }}
-    >
-      <div className="aspect-[16/10] overflow-hidden sm:aspect-[16/9]">
-        <img
-          src={category.image}
-          alt={category.name}
-          loading="lazy"
-          className="h-full w-full object-cover opacity-80 transition-all duration-500 group-hover:scale-105 group-hover:opacity-60"
-          onError={(event) => applyImageFallback(event, categoryPlaceholder)}
-        />
-      </div>
-      <div className="absolute inset-0 flex flex-col justify-between p-5 sm:p-7">
-        <span className="self-start rounded-full bg-white/15 px-3 py-1 font-display text-sm font-bold text-white backdrop-blur-sm transition-transform duration-300 group-hover:rotate-3 group-hover:bg-orange-500">
-          {String(index + 1).padStart(2, '0')}
-        </span>
-        <div>
-          <h3 className="font-display text-xl font-bold text-white sm:text-2xl">
-            {category.name}
-          </h3>
-          <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-sm text-navy-200">{category.styles}</span>
-            <span className="inline-flex items-center gap-1 text-sm font-semibold text-orange-400 transition-all group-hover:gap-2">
-              <ArrowRight size={16} /> Shop Now
-            </span>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-/* — Category card: wide banner for the last category — */
-function CategoryCardWide({ category, index }: { category: Category; index: number }) {
-  const { ref, visible } = useReveal<HTMLAnchorElement>();
-  return (
-    <Link
-      to={`/category/${category.slug}`}
-      ref={ref}
-      className={`reveal ${visible ? 'is-visible' : ''} group relative block overflow-hidden rounded-2xl bg-navy-900 transition-transform duration-300 hover:-rotate-[0.25deg] hover:shadow-xl hover:shadow-navy-900/15`}
-      style={{ transitionDelay: `${index * 80}ms` }}
-    >
-      <div className="aspect-[16/7] overflow-hidden sm:aspect-[16/5]">
-        <img
-          src={category.image}
-          alt={category.name}
-          loading="lazy"
-          className="h-full w-full object-cover opacity-80 transition-all duration-500 group-hover:scale-105 group-hover:opacity-60"
-          onError={(event) => applyImageFallback(event, categoryPlaceholder)}
-        />
-      </div>
-      <div className="absolute inset-0 flex items-center justify-between gap-4 p-5 sm:p-8">
-        <div className="min-w-0">
-          <span className="mb-2 inline-block rounded-full bg-white/15 px-3 py-1 font-display text-sm font-bold text-white backdrop-blur-sm transition-transform duration-300 group-hover:-rotate-3 group-hover:bg-orange-500">
-            {String(index + 5).padStart(2, '0')}
-          </span>
-          <h3 className="font-display text-xl font-bold text-white sm:text-2xl">
-            {category.name}
-          </h3>
-          <p className="mt-1 text-sm text-navy-200">{category.styles}</p>
-        </div>
-        <span className="hidden shrink-0 items-center gap-1.5 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition-all group-hover:bg-orange-500 sm:inline-flex">
-          Shop Now <ArrowRight size={16} />
-        </span>
-      </div>
-    </Link>
-  );
-}
-
 /* — How It Works card — */
-function HowItWorksCard({ step, index }: { step: { icon: typeof ArrowRight; num: string; title: string; desc: string }; index: number }) {
+function HowItWorksCard({ step, index }: { step: { icon: typeof ArrowRight; title: string; desc: string }; index: number }) {
   const { ref, visible } = useReveal();
   return (
     <div
       ref={ref}
-      className={`reveal ${visible ? 'is-visible' : ''} group rounded-2xl bg-white p-6 text-center transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-navy-900/5`}
+      className={`reveal ${visible ? 'is-visible' : ''} ${homeSections.stepCard}`}
       style={{ transitionDelay: `${index * 80}ms` }}
     >
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-orange-500 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-105">
-        <step.icon size={26} />
+      <div className={homeSections.stepIcon}>
+        <step.icon size={26} aria-hidden="true" />
       </div>
-      <span className="font-display text-xs font-bold uppercase tracking-wide text-orange-500">
-        {step.num}
-      </span>
-      <h3 className="mt-1.5 font-display text-base font-bold text-navy-900">{step.title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-navy-500">{step.desc}</p>
+      <h3 className={homeSections.cardTitle}>{step.title}</h3>
+      <p className={homeSections.cardDescription}>{step.desc}</p>
     </div>
   );
 }
@@ -372,14 +258,14 @@ function WhyChooseCard({ item, index }: { item: { icon: typeof ArrowRight; title
   return (
     <div
       ref={ref}
-      className={`reveal ${visible ? 'is-visible' : ''} group rounded-2xl border border-navy-100 bg-white p-6 transition-all hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg hover:shadow-navy-900/5`}
+      className={`reveal ${visible ? 'is-visible' : ''} ${homeSections.benefitCard}`}
       style={{ transitionDelay: `${index * 80}ms` }}
     >
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-navy-900 text-orange-500 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105">
-        <item.icon size={24} />
+      <div className={homeSections.benefitIcon}>
+        <item.icon size={24} aria-hidden="true" />
       </div>
-      <h3 className="font-display text-base font-bold text-navy-900">{item.title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-navy-500">{item.desc}</p>
+      <h3 className={homeSections.cardTitle}>{item.title}</h3>
+      <p className={homeSections.cardDescription}>{item.desc}</p>
     </div>
   );
 }

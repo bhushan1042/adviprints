@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Eye, ArrowRight } from 'lucide-react';
+import { ArrowRight, Star } from 'lucide-react';
 import type { Product } from '@/data/products';
 import categoryPlaceholder from '@/assets/placeholders/category-placeholder.png';
 import { applyImageFallback } from '@/utils/images';
-import StarRating from './StarRating';
 
 interface ProductCardProps {
   product: Product;
@@ -16,31 +15,31 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
     : 0;
 
   return (
-    <div
-      className="group relative flex flex-col"
+    <article
+      className="group relative flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-navy-100/80 bg-white shadow-[0_8px_30px_rgba(16,42,67,0.06)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_18px_40px_rgba(16,42,67,0.12)] motion-reduce:transform-none motion-reduce:transition-none"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <Link
         to={`/product/${product.slug}`}
-        className="relative block overflow-hidden rounded-2xl bg-navy-50"
+        className="relative m-2 block overflow-hidden rounded-[1.15rem] bg-navy-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
       >
         <div className="aspect-[4/5] overflow-hidden">
           <img
-            src={product.images[0]}
+            src={product.thumbnail || product.images[0]}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-            onError={(event) => applyImageFallback(event, categoryPlaceholder)}
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
+            onError={(event) => applyImageFallback(event, product.thumbnail && product.thumbnail !== product.images[0] ? product.images[0] : categoryPlaceholder)}
           />
         </div>
 
-        {product.images[1] && (
+        {(!product.thumbnail || product.thumbnail === product.images[0]) && product.images[1] && (
           <img
             src={product.images[1]}
             alt=""
             loading="lazy"
             aria-hidden
-            className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+            className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100 motion-reduce:transition-none"
             onError={(event) => applyImageFallback(event, categoryPlaceholder)}
           />
         )}
@@ -63,44 +62,40 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           )}
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 flex translate-y-full items-center justify-center gap-2 bg-gradient-to-t from-navy-900/80 to-transparent p-4 transition-transform duration-300 group-hover:translate-y-0">
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-4 py-2 text-sm font-semibold text-navy-800 backdrop-blur">
-            <Eye size={16} /> View Details
-          </span>
-        </div>
+        <span aria-hidden="true" className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-navy-900 shadow-lg transition-colors duration-300 group-hover:bg-orange-500 group-hover:text-white motion-reduce:transition-none">
+          <ArrowRight size={18} />
+        </span>
       </Link>
 
-      <div className="mt-4 flex flex-1 flex-col">
-        <div className="mb-1 flex items-center justify-between gap-2">
-          <span className="text-xs font-medium uppercase tracking-wide text-orange-500">
-            {product.categoryName || 'Custom apparel'}
+      <div className="flex flex-1 flex-col px-4 pb-4 pt-2 sm:px-5 sm:pb-5">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-orange-700">
+            {product.categoryName || 'Products'}
           </span>
-          <StarRating rating={product.rating} />
+          {product.reviewCount > 0 && (
+            <span className="flex items-center gap-1 text-xs font-semibold text-navy-600" aria-label={`${product.rating.toFixed(1)} out of 5, ${product.reviewCount} reviews`}>
+              <Star size={14} className="fill-orange-400 text-orange-400" aria-hidden="true" />
+              {product.rating.toFixed(1)} <span className="font-normal text-navy-400">({product.reviewCount})</span>
+            </span>
+          )}
         </div>
 
         <Link to={`/product/${product.slug}`}>
-          <h3 className="font-display text-base font-semibold leading-snug text-navy-800 transition-colors hover:text-orange-600">
+          <h3 className="font-display text-sm font-bold leading-snug text-navy-900 transition-colors hover:text-orange-600 sm:text-base">
             {product.name}
           </h3>
         </Link>
 
-        <div className="mt-2 flex items-center gap-1.5">
-          {product.colors.slice(0, 5).map((c) => (
-            <span
-              key={c.name}
-              title={c.name}
-              className="h-3.5 w-3.5 rounded-full border border-navy-200"
-              style={{ backgroundColor: c.hex }}
-            />
-          ))}
+        {product.colors.length > 0 && <div className="mt-3 flex items-center gap-1.5" aria-label={`Colours: ${product.colors.map((c) => c.name).join(', ')}`}>
+          
           {product.colors.length > 5 && (
             <span className="text-xs text-navy-400">+{product.colors.length - 5}</span>
           )}
-        </div>
+        </div>}
 
-        <div className="mt-3 flex items-center justify-between">
-          <div className="flex items-baseline gap-2">
-            <span className="font-display text-lg font-bold text-navy-900">
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-2 pt-5">
+          <div className="flex flex-wrap items-baseline gap-x-2">
+            <span className="font-display text-base font-bold text-navy-900 sm:text-lg">
               Rs {product.price}
             </span>
             {product.originalPrice && (
@@ -110,14 +105,14 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             )}
           </div>
           <Link
-            to={`/product/${product.id}`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-navy-50 px-3 py-2 text-sm font-semibold text-navy-700 transition-all hover:bg-orange-500 hover:text-white active:scale-95"
+            to={`/product/${product.slug}`}
+            className="inline-flex items-center gap-1 text-xs font-bold text-orange-700 transition-colors hover:text-orange-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 sm:text-sm"
             aria-label={`View ${product.name}`}
           >
-            <ArrowRight size={16} />
+            View <ArrowRight size={15} aria-hidden="true" />
           </Link>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import api, { getErrorMessage, isRequestAborted, withAuth } from '../../../services/api';
 import styles from './AdminProducts.module.css';
 
@@ -10,13 +10,18 @@ const EMPTY_FORM = {
   stock: '0',
   sizes: '',
   colours: '',
-  qikinkVariants: '',
+  qikinkVariants: [],
+  qikinkExcludedVariants: [],
+  thumbnailUrl: '',
   imageUrls: []
 };
 
 const splitOptions = (value) => [...new Set(
   value.split(/[\n,]+/).map((option) => option.trim()).filter(Boolean)
 )];
+
+const colourName = (colour) => colour.split('|')[0].trim();
+const variantKey = (size, colour) => `${size.trim().toLowerCase()}\u0000${colourName(colour).toLowerCase()}`;
 
 const toForm = (product) => ({
   name: product.name || '',
@@ -26,25 +31,28 @@ const toForm = (product) => ({
   stock: String(product.stock ?? 0),
   sizes: (product.sizes || []).join('\n'),
   colours: (product.colours || []).join('\n'),
-  qikinkVariants: (product.qikinkVariants || [])
-    .map((variant) => `${variant.size} | ${variant.colour} | ${variant.sku} | ${variant.printTypeId}`)
-    .join('\n'),
+  qikinkVariants: (product.qikinkVariants || []).map((variant) => ({ ...variant })),
+  qikinkExcludedVariants: (product.qikinkExcludedVariants || []).map((variant) => ({ ...variant })),
+  thumbnailUrl: product.thumbnailUrl || '',
   imageUrls: [...new Set([product.imageUrl, ...(product.images || [])].filter(Boolean))]
 });
 
-const parseVariants = (value) => {
-  const variants = [];
-  for (const [index, line] of value.split(/\r?\n/).entries()) {
-    if (!line.trim()) continue;
-    const [size, colour, sku, printTypeValue, ...extra] = line.split('|').map((part) => part.trim());
-    const printTypeId = Number(printTypeValue);
-    if (extra.length || !size || !colour || !sku || !Number.isInteger(printTypeId)) {
-      throw new Error(`Mapping line ${index + 1} must be: size | colour | exact SKU | print type ID.`);
-    }
-    variants.push({ size, colour, sku, printTypeId });
+const collectVariants = (sizes, colours, drafts, excluded) => colours.flatMap((colour) => sizes.flatMap((size) => {
+  if (excluded.some((variant) => variantKey(variant.size, variant.colour) === variantKey(size, colour))) return [];
+  const draft = drafts.find((variant) => variantKey(variant.size, variant.colour) === variantKey(size, colour));
+  if (!draft) return [];
+  const sku = (draft.sku || '').trim();
+  const productSku = (draft.productSku || '').trim();
+  const designSku = (draft.designSku || '').trim();
+  const price = String(draft.qikinkPrice ?? '').trim();
+  if (!sku && !productSku && !designSku && !price) return [];
+  if (!sku) throw new Error(`Enter the Store SKU for ${colourName(colour)} / ${size}.`);
+  const qikinkPrice = price ? Number(price) : undefined;
+  if (qikinkPrice !== undefined && (!Number.isFinite(qikinkPrice) || qikinkPrice < 0.01 || qikinkPrice > 100000)) {
+    throw new Error(`Enter a Qikink price between 0.01 and 100000 for ${colourName(colour)} / ${size}.`);
   }
-  return variants;
-};
+  return [{ size, colour: colourName(colour), sku, ...(draft.printTypeId === undefined ? {} : { printTypeId: draft.printTypeId }), ...(qikinkPrice === undefined ? {} : { qikinkPrice }), ...(productSku ? { productSku } : {}), ...(designSku ? { designSku } : {}) }];
+}));
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -52,12 +60,17 @@ const AdminProducts = () => {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const imageInput = useRef(null);
+  const thumbnailInput = useRef(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [newSize, setNewSize] = useState('');
+  const [sizeMessage, setSizeMessage] = useState('');
 
   const loadProducts = useCallback(async (signal) => {
     setLoading(true);
@@ -84,13 +97,47 @@ const AdminProducts = () => {
   }, [loadProducts]);
 
   const updateForm = (field, value) => setForm((current) => ({ ...current, [field]: value }));
+  const clearFileInputs = () => {
+    setImageFiles([]);
+    setThumbnailFile(null);
+    if (imageInput.current) imageInput.current.value = '';
+    if (thumbnailInput.current) thumbnailInput.current.value = '';
+  };
+  const updateVariant = (size, colour, field, value) => setForm((current) => {
+    const key = variantKey(size, colour);
+    const existing = current.qikinkVariants.find((variant) => variantKey(variant.size, variant.colour) === key);
+    const updated = { ...existing, size, colour: colourName(colour), [field]: value };
+    return { ...current, qikinkVariants: [...current.qikinkVariants.filter((variant) => variantKey(variant.size, variant.colour) !== key), updated] };
+  });
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
-    setImageFiles([]);
+    clearFileInputs();
     setEditingId(null);
     setMessage('');
     setError('');
+    setNewSize('');
+    setSizeMessage('');
+  };
+
+  const addSize = () => {
+    const size = newSize.trim();
+    const sizes = splitOptions(form.sizes);
+    if (!size || /[,\n\r]/.test(size)) {
+      setSizeMessage('Enter one size at a time.');
+      return;
+    }
+    if (sizes.some((item) => item.toLowerCase() === size.toLowerCase())) {
+      setSizeMessage('This size is already in the list.');
+      return;
+    }
+    if (sizes.length >= 50) {
+      setSizeMessage('A product can have at most 50 sizes.');
+      return;
+    }
+    updateForm('sizes', [...sizes, size].join(', '));
+    setNewSize('');
+    setSizeMessage(`Added size ${size}.`);
   };
 
   const uploadImages = async () => {
@@ -105,6 +152,16 @@ const AdminProducts = () => {
     return [...new Set([...form.imageUrls, ...uploaded])];
   };
 
+  const uploadThumbnail = async () => {
+    if (!thumbnailFile) return form.thumbnailUrl;
+    const body = new FormData();
+    body.append('image', thumbnailFile);
+    body.append('folder', 'products');
+    const { data } = await api.post('/upload', body, withAuth());
+    if (!data.url) throw new Error('Thumbnail upload did not return an image URL.');
+    return data.url;
+  };
+
   const saveProduct = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -113,9 +170,13 @@ const AdminProducts = () => {
     try {
       const sizes = splitOptions(form.sizes);
       const colours = splitOptions(form.colours);
-      const qikinkVariants = parseVariants(form.qikinkVariants);
+      const qikinkExcludedVariants = form.qikinkExcludedVariants.filter((variant) =>
+        sizes.some((size) => size.toLowerCase() === variant.size.toLowerCase()) &&
+        colours.some((colour) => colourName(colour).toLowerCase() === colourName(variant.colour).toLowerCase()));
+      const qikinkVariants = collectVariants(sizes, colours, form.qikinkVariants, qikinkExcludedVariants);
       if (sizes.length > 50 || colours.length > 50) throw new Error('Use no more than 50 sizes and 50 colours.');
       const imageUrls = await uploadImages();
+      const thumbnailUrl = await uploadThumbnail();
       const payload = {
         name: form.name.trim(),
         description: form.description.trim(),
@@ -125,7 +186,9 @@ const AdminProducts = () => {
         sizes,
         colours,
         qikinkVariants,
+        qikinkExcludedVariants,
         imageUrl: imageUrls[0] || '',
+        thumbnailUrl,
         images: imageUrls
       };
       const response = editingId
@@ -191,7 +254,7 @@ const AdminProducts = () => {
             <h2>{editingId ? 'Edit product' : 'Add product'}</h2>
             <p>Every new or edited product returns to PENDING until reviewed.</p>
           </div>
-          {editingId ? <button type="button" className={styles.refreshButton} onClick={resetForm}>Cancel edit</button> : null}
+          {editingId ? <button type="button" className={styles.refreshButton} disabled={saving} onClick={resetForm}>Cancel edit</button> : null}
         </div>
         <div className={styles.fields}>
           <label>
@@ -218,9 +281,18 @@ const AdminProducts = () => {
             <textarea rows={3} value={form.description} onChange={(event) => updateForm('description', event.target.value)} />
           </label>
           <label className={styles.fullWidth}>
+            Product thumbnail image
+            <input ref={thumbnailInput} type="file" accept="image/*" onChange={(event) => setThumbnailFile(event.target.files?.[0] || null)} />
+            <small>Shown in product lists. If none is provided, the product image is used.</small>
+            {form.thumbnailUrl ? <span className={styles.imageItem}>
+              <img src={form.thumbnailUrl} alt="Current product thumbnail" />
+              <button type="button" className={styles.presetButton} onClick={() => { updateForm('thumbnailUrl', ''); setThumbnailFile(null); if (thumbnailInput.current) thumbnailInput.current.value = ''; }}>Remove thumbnail</button>
+            </span> : null}
+          </label>
+          <label className={styles.fullWidth}>
             Product images
-            <input type="file" accept="image/*" multiple onChange={(event) => setImageFiles(Array.from(event.target.files || []))} />
-            <small>Images upload to the existing Adviprints storage. First image is the primary product image.</small>
+            <input ref={imageInput} type="file" accept="image/*" multiple onChange={(event) => setImageFiles(Array.from(event.target.files || []))} />
+            <small>Shown on the product detail page. The first image is the main preview. New images are added after existing images; use Set primary after saving to change the preview.</small>
             {form.imageUrls.length ? (
               <span className={styles.imageList}>
                 {form.imageUrls.map((url, index) => (
@@ -240,26 +312,54 @@ const AdminProducts = () => {
               </span>
             ) : null}
           </label>
-          <label>
-            Available sizes
-            <small>One per line or comma-separated.</small>
-            <textarea rows={4} value={form.sizes} onChange={(event) => updateForm('sizes', event.target.value)} />
-          </label>
+          <div className={styles.mappingField}>
+            <label htmlFor="admin-sizes">Available sizes</label>
+            <small>Keep all sizes separated by commas, or use Add size below.</small>
+            <textarea id="admin-sizes" rows={4} value={form.sizes} onChange={(event) => updateForm('sizes', event.target.value)} />
+            <div className={styles.addSize}>
+              <input aria-label="New size" placeholder="New size, e.g. M" value={newSize} onChange={(event) => setNewSize(event.target.value)} />
+              <button type="button" className={styles.presetButton} onClick={addSize}>Add size</button>
+            </div>
+            <span className={styles.notice} role="status" aria-live="polite">{sizeMessage}</span>
+          </div>
           <label>
             Available colours
-            <small>One per line. Optional display colour format: Name | #hex.</small>
+            <small>Enter colours separated by commas, for example: White. Optional format: Name | #hex.</small>
             <textarea rows={4} value={form.colours} onChange={(event) => updateForm('colours', event.target.value)} />
           </label>
-          <label className={styles.fullWidth}>
-            Exact Qikink variant mapping
-            <small>One per colour-size combination: size | colour name | exact SKU | print_type_id. Use only verified values from your Qikink account.</small>
-            <textarea rows={6} value={form.qikinkVariants} onChange={(event) => updateForm('qikinkVariants', event.target.value)} placeholder="M | Black | <verified SKU> | <verified print_type_id>" />
-          </label>
+          <div className={`${styles.fullWidth} ${styles.mappingField}`}>
+            <span>Product variation rows</span>
+            <small>Enter both sizes and colours above. A row appears for every size and colour. Copy each row's details from Qikink.</small>
+            {splitOptions(form.sizes).length && splitOptions(form.colours).length ? (
+              <div className={styles.variantTable}>
+                <table>
+                  <thead><tr><th>Colour</th><th>Size</th><th>Store SKU</th><th>Product SKU</th><th>Design SKU</th><th>Product cost (₹)</th><th>Action</th></tr></thead>
+                  <tbody>{splitOptions(form.colours).flatMap((colour) => splitOptions(form.sizes).map((size) => {
+                    if (form.qikinkExcludedVariants.some((item) => variantKey(item.size, item.colour) === variantKey(size, colour))) return null;
+                    const variant = form.qikinkVariants.find((item) => variantKey(item.size, item.colour) === variantKey(size, colour));
+                    const label = `${colourName(colour)} ${size}`;
+                    return <tr key={variantKey(size, colour)}>
+                      <td>{colourName(colour)}</td><td>{size}</td>
+                      <td><input aria-label={`Store SKU for ${label}`} maxLength={50} value={variant?.sku ?? ''} onChange={(event) => updateVariant(size, colour, 'sku', event.target.value)} /></td>
+                      <td><input aria-label={`Product SKU for ${label}`} maxLength={100} value={variant?.productSku ?? ''} onChange={(event) => updateVariant(size, colour, 'productSku', event.target.value)} /></td>
+                      <td><input aria-label={`Design SKU for ${label}`} maxLength={100} value={variant?.designSku ?? ''} onChange={(event) => updateVariant(size, colour, 'designSku', event.target.value)} /></td>
+                      <td><input aria-label={`Product cost for ${label}`} type="number" min="0.01" max="100000" step="0.01" value={variant?.qikinkPrice ?? ''} onChange={(event) => updateVariant(size, colour, 'qikinkPrice', event.target.value)} /></td>
+                      <td><button type="button" className={styles.presetButton} aria-label={`Remove ${label}`} onClick={() => updateForm('qikinkExcludedVariants', [...form.qikinkExcludedVariants, { size, colour: colourName(colour) }])}>Remove</button></td>
+                    </tr>;
+                  }))}</tbody>
+                </table>
+                {form.qikinkExcludedVariants.filter((item) =>
+                  splitOptions(form.sizes).some((size) => size.toLowerCase() === item.size.toLowerCase()) &&
+                  splitOptions(form.colours).some((colour) => colourName(colour).toLowerCase() === colourName(item.colour).toLowerCase())
+                ).map((item) => <button key={variantKey(item.size, item.colour)} type="button" className={styles.presetButton} onClick={() => updateForm('qikinkExcludedVariants', form.qikinkExcludedVariants.filter((v) => variantKey(v.size, v.colour) !== variantKey(item.size, item.colour)))}>Restore {item.colour} / {item.size}</button>)}
+              </div>
+            ) : <p className={styles.notice}>No rows yet. Enter at least one size and one colour above.</p>}
+          </div>
         </div>
         {message ? <p className={styles.success} role="status">{message}</p> : null}
         {error ? <p className={styles.error} role="alert">{error}</p> : null}
         <div className={styles.actions}>
-          <span className={styles.notice}>Qikink SKUs and print type IDs are validated; no values are invented.</span>
+          <span className={styles.notice}>Copy variation details from Qikink; no values are invented.</span>
           <button type="submit" className={styles.saveButton} disabled={saving}>{saving ? 'Saving…' : editingId ? 'Save changes' : 'Create product'}</button>
         </div>
       </form>
@@ -291,7 +391,7 @@ const AdminProducts = () => {
                 <ul className={styles.problemList}>{product.approvalProblems.map((problem) => <li key={problem}>{problem}</li>)}</ul>
               ) : null}
               <div className={styles.actions}>
-                <button type="button" className={styles.refreshButton} onClick={() => { setEditingId(product._id); setForm(toForm(product)); setImageFiles([]); setMessage(''); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                <button type="button" className={styles.refreshButton} disabled={saving} onClick={() => { setEditingId(product._id); setForm(toForm(product)); clearFileInputs(); setMessage(''); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                   Edit (requires re-approval)
                 </button>
                 {product.status === 'ENABLED' ? (

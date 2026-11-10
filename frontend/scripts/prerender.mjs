@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   HOME_META,
-  SHOP_META,
+  CATEGORIES_META,
   STATIC_PAGES,
   absoluteImageUrl,
   categoryMeta,
@@ -62,9 +62,7 @@ export const prerender = async ({ buildDir, apiBase, fetchImpl = fetch, strict =
   };
 
   const staticLinks = [
-    { path: '/category/all', label: 'Shop custom T-shirts' },
-    { path: '/how-it-works', label: 'How it works' },
-    { path: '/faq', label: 'FAQ' },
+    { path: '/category/all', label: 'All categories' },
     { path: '/contact', label: 'Contact' }
   ];
 
@@ -101,12 +99,12 @@ export const prerender = async ({ buildDir, apiBase, fetchImpl = fetch, strict =
   const sitemapEntries = [{ path: '/' }];
   STATIC_PAGES.forEach((page) => sitemapEntries.push({ path: page.path }));
 
-  if (validProducts.length) {
+  if (usable.length) {
     await emit(
-      SHOP_META,
-      renderRootContent('All T-Shirts', [SHOP_META.description], validProducts.slice(0, 50).map((p) => ({ path: `/product/${p._id}`, label: p.name })))
+      CATEGORIES_META,
+      renderRootContent('All Categories', [CATEGORIES_META.description], usable.map(({ category, slug }) => ({ path: `/category/${slug}`, label: category.name })))
     );
-    sitemapEntries.push({ path: SHOP_META.path });
+    sitemapEntries.push({ path: CATEGORIES_META.path });
   }
 
   const categoryByKey = new Map();
@@ -135,7 +133,7 @@ export const prerender = async ({ buildDir, apiBase, fetchImpl = fetch, strict =
         [product.description, Number.isFinite(price) && price > 0 ? `Price: Rs ${price}` : ''],
         [
           ...(category ? [{ path: `/category/${categorySlug(category)}`, label: category.name }] : []),
-          { path: '/category/all', label: 'All T-shirts' }
+          { path: '/category/all', label: 'All Categories' }
         ]
       )
     );

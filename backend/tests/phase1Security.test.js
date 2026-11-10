@@ -16,8 +16,19 @@ test('public product view removes Qikink and fulfilment fields', () => {
     fulfillment: { config: 'internal' }
   });
 
-  assert.deepEqual(view, { _id: 'product-id', name: 'Ready tee' });
+  assert.deepEqual(view, { _id: 'product-id', name: 'Ready tee', availableVariations: [{ size: 'M', colour: 'Black' }] });
   assert.equal(JSON.stringify(view).includes('internal-sku'), false);
+});
+
+test('public availability excludes removed combinations without exposing SKU data', () => {
+  const view = toPublicProduct({
+    qikinkVariants: [
+      { size: 'S', colour: 'White', sku: 'private-s' },
+      { size: 'M', colour: 'White', sku: 'private-m' }
+    ],
+    qikinkExcludedVariants: [{ size: 'S', colour: 'White' }]
+  });
+  assert.deepEqual(view, { availableVariations: [{ size: 'M', colour: 'White' }] });
 });
 
 test('checkoutId has a declared unique sparse MongoDB index', () => {

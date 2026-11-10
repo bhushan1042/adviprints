@@ -66,6 +66,7 @@ export const mapProduct = (product, categories = []) => {
     colors: colours.map(mapProductColour),
     sizes: Array.isArray(product?.sizes) ? product.sizes : [],
     images: [...new Set(images.length ? images : [categoryPlaceholder])],
+    thumbnail: resolveImageUrl(product?.thumbnailUrl, images[0] || categoryPlaceholder),
     rating: Number(product?.averageRating) || 0,
     reviewCount: Number(product?.reviewCount) || 0,
     originalPrice: Number(product?.originalPrice) || undefined,
